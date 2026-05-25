@@ -26,7 +26,7 @@ st.markdown("""
         background-color: black;
     }
     .stTextArea textarea:focus {
-        border-color: #e0e0e0;
+        border-color: #999999;
     }
     .stButton button {
         border-radius: 8px;
