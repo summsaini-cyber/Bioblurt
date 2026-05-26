@@ -41,7 +41,7 @@ st.markdown("""
     .stButton button {
         border-radius: 8px;
         font-weight: 600;
-        transition: all 0.3s;
+        transition: all 2s;
     }
     .topic-card {
         background-color: white;
