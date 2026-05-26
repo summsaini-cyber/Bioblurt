@@ -41,7 +41,7 @@ st.markdown("""
     .stButton button {
         border-radius: 8px;
         font-weight: 600;
-        transition: all 2s;
+        transition: all 0.2s;
     }
     .topic-card {
         background-color: white;
@@ -367,11 +367,11 @@ def save_progress(progress):
         json.dump(progress, f, indent=2)
 
 def get_rank(percentage):
-    if percentage < 30:
+    if percentage < 40:
         return "Beginner", "rank-beginner"
-    elif percentage < 50:
+    elif percentage < 60:
         return "Developing", "rank-developing"
-    elif percentage < 70:
+    elif percentage < 80:
         return "Proficient", "rank-proficient"
     else:
         return "Master", "rank-master"
@@ -402,9 +402,9 @@ def calculate_score(user_text, spec_points):
     return round(score, 1), matched_points
 
 def get_rag_status(score):
-    if score < 30:
+    if score < 50:
         return "Red", "rag-red"
-    elif score < 60:
+    elif score < 75:
         return "Amber", "rag-amber"
     else:
         return "Green", "rag-green"
@@ -575,9 +575,9 @@ else:
             st.markdown("**Status:**")
             st.markdown(f"<span class='{css_class}' style='font-size: 24px;'>{status}</span>", unsafe_allow_html=True)
 
-            if display_score < 30:
+            if display_score < 50:
                 st.markdown("🔴 **Red** - Keep studying this topic!")
-            elif display_score < 60:
+            elif display_score < 70:
                 st.markdown("🟡 **Amber** - Getting there, review missed points")
             else:
                 st.markdown("🟢 **Green** - Great recall! Move to next topic")
