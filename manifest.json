@@ -1,0 +1,17 @@
+{
+  "name": "BioBlurt",
+  "short_name": "BioBlurt",
+  "description": "Active Recall for AQA A-Level Biology",
+  "start_url": "/",
+  "display": "standalone",
+  "background_colour": "#fafafa",
+  "theme_colour": "#4CAF50",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2909/2909796.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+    
