@@ -72,15 +72,15 @@ st.markdown("""
 
 # AQA Biology A-Level Specification Data
 AQA_TOPICS = {
-    "3.1 Biological molecules": {
-        "3.1.1 Monomers and polymers": [
-            "Monomers are smaller units from which larger molecules are made",
+    "1.0 Biological molecules": {
+        "1.1 Monomers and polymers": [
+            "Monomers are smaller units from which larger molecules (polymers) are made",
             "Polymers are molecules made from a large number of monomers joined together",
             "Monosaccharides, amino acids and nucleotides are examples of monomers",
             "A condensation reaction joins two molecules together with formation of a chemical bond and involves elimination of water",
             "A hydrolysis reaction breaks a chemical bond between two molecules and involves use of a water molecule"
         ],
-        "3.1.2 Carbohydrates": [
+        "1.2 Carbohydrates": [
             "Monosaccharides are the monomers from which larger carbohydrates are made",
             "Glucose, galactose and fructose are common monosaccharides",
             "A condensation reaction between two monosaccharides forms a glycosidic bond",
@@ -96,7 +96,7 @@ AQA_TOPICS = {
             "Benedict's solution test for reducing sugars and non-reducing sugars",
             "Iodine/potassium iodide test for starch"
         ],
-        "3.1.3 Lipids": [
+        "1.3 Lipids": [
             "Triglycerides and phospholipids are two groups of lipid",
             "Triglycerides are formed by condensation of one glycerol and three fatty acids",
             "A condensation reaction between glycerol and a fatty acid forms an ester bond",
@@ -105,7 +105,7 @@ AQA_TOPICS = {
             "Different properties of triglycerides and phospholipids related to their different structures",
             "The emulsion test for lipids"
         ],
-        "3.1.4 Proteins": [
+        "1.4 Proteins": [
             "Amino acids are the monomers from which proteins are made",
             "General structure of an amino acid with NH2 amine group, COOH carboxyl group and R side chain",
             "Twenty amino acids common in all organisms differ only in their side group",
@@ -117,7 +117,7 @@ AQA_TOPICS = {
             "Relationship between primary, secondary, tertiary and quaternary structure and protein function",
             "The biuret test for proteins"
         ],
-        "3.1.5 Nucleic acids": [
+        "1.5 Nucleic acids": [
             "DNA and RNA are important information-carrying molecules",
             "DNA holds genetic information and RNA transfers genetic information from DNA to ribosomes",
             "Ribosomes are formed from RNA and proteins",
@@ -132,21 +132,21 @@ AQA_TOPICS = {
             "Role of DNA helicase in unwinding DNA and breaking hydrogen bonds",
             "Role of DNA polymerase in joining adjacent nucleotides"
         ],
-        "3.1.6 ATP": [
+        "1.6 ATP": [
             "ATP is a nucleotide derivative formed from ribose, adenine and three phosphate groups",
             "Hydrolysis of ATP to ADP and Pi is catalysed by ATP hydrolase",
             "Hydrolysis of ATP can be coupled to energy-requiring reactions within cells",
             "Inorganic phosphate released during hydrolysis can be used to phosphorylate other compounds",
             "ATP is resynthesised by condensation of ADP and Pi catalysed by ATP synthase during photosynthesis or respiration"
         ],
-        "3.1.7 Water": [
+        "1.7 Water": [
             "Water is a metabolite in many metabolic reactions including condensation and hydrolysis",
             "Water is an important solvent in which metabolic reactions occur",
             "Water has a relatively high heat capacity, buffering changes in temperature",
             "Water has a relatively large latent heat of vaporisation, providing cooling effect with little water loss",
             "Water has strong cohesion between molecules supporting columns of water in plant transport cells and producing surface tension"
         ],
-        "3.1.8 Inorganic ions": [
+        "1.8 Inorganic ions": [
             "Inorganic ions occur in solution in cytoplasm and body fluids",
             "Hydrogen ions and pH",
             "Iron ions as a component of haemoglobin",
@@ -154,23 +154,23 @@ AQA_TOPICS = {
             "Phosphate ions as components of DNA and ATP"
         ]
     },
-    "3.2 Cells": {
-        "3.2.1 Cell structure": [
+    "2.0 Cells": {
+        "2.1 Cell structure": [
             "Structure and function of organelles including nucleus, mitochondria, chloroplasts, Golgi apparatus, ER, ribosomes, lysosomes, vacuoles, cell wall, plasma membrane",
             "Prokaryotic and eukaryotic cell structure differences",
             "Structure of bacteria including cell wall, plasma membrane, capsule, circular DNA, plasmids, flagella"
         ],
-        "3.2.2 All cells arise from other cells": [
+        "2.2 All cells arise from other cells": [
             "Cell division by mitosis and meiosis",
             "The cell cycle: interphase, prophase, metaphase, anaphase, telophase, cytokinesis"
         ],
-        "3.2.3 Transport across cell membranes": [
+        "2.3 Transport across cell membranes": [
             "Structure of cell surface membrane as fluid mosaic model",
             "Passive transport: diffusion, facilitated diffusion, osmosis",
             "Active transport",
             "Bulk transport: exocytosis and endocytosis"
         ],
-        "3.2.4 Cell recognition and the immune system": [
+        "2.4 Cell recognition and the immune system": [
             "Phagocytosis by phagocytes",
             "T-helper cell activation of B cells",
             "B cell activation and clonal selection",
@@ -179,12 +179,12 @@ AQA_TOPICS = {
             "Monoclonal antibodies and their use in diagnosis and treatment"
         ]
     },
-    "3.3 Organisms exchange substances": {
-        "3.3.1 Surface area to volume ratio": [
+    "3.0 Organisms exchange substances": {
+        "3.1 Surface area to volume ratio": [
             "Relationship between size of organism and surface area to volume ratio",
             "Changes to body shape and development of systems as adaptations facilitating exchange"
         ],
-        "3.3.2 Gas exchange": [
+        "3.2 Gas exchange": [
             "Gas exchange across body surface of single-celled organism",
             "Gas exchange in tracheal system of insects",
             "Gas exchange across gills of fish including counter-current principle",
@@ -194,14 +194,14 @@ AQA_TOPICS = {
             "Ventilation and gas exchange in lungs",
             "Mechanism of breathing including role of diaphragm and intercostal muscles"
         ],
-        "3.3.3 Digestion and absorption": [
+        "3.3 Digestion and absorption": [
             "Digestion of carbohydrates by amylases and membrane-bound disaccharidases",
             "Digestion of lipids by lipase including action of bile salts",
             "Digestion of proteins by endopeptidases, exopeptidases and membrane-bound dipeptidases",
             "Co-transport mechanisms for absorption of amino acids and monosaccharides",
             "Role of micelles in absorption of lipids"
         ],
-        "3.3.4 Mass transport": [
+        "3.4 Mass transport": [
             "Role of haemoglobin and red blood cells in transport of oxygen",
             "Loading, transport and unloading of oxygen in relation to oxyhaemoglobin dissociation curve",
             "Cooperative nature of oxygen binding to haemoglobin",
@@ -218,124 +218,124 @@ AQA_TOPICS = {
             "Mass flow hypothesis for mechanism of translocation in plants"
         ]
     },
-    "3.4 Genetic information": {
-        "3.4.1 DNA, genes and chromosomes": [
+    "4.0 Genetic information": {
+        "4.1 DNA, genes and chromosomes": [
             "Gene as a sequence of nucleotides that codes for a polypeptide or functional RNA",
             "Locus of a gene on a chromosome",
             "Alleles as variants of a gene",
             "Structure of chromosomes including centromere and telomeres"
         ],
-        "3.4.2 DNA and protein synthesis": [
+        "4.2 DNA and protein synthesis": [
             "Transcription: production of mRNA from DNA template",
             "Role of RNA polymerase in transcription",
             "Splicing of pre-mRNA to remove introns and join exons",
             "Translation: role of ribosomes, mRNA, tRNA and codons",
             "Role of start and stop codons"
         ],
-        "3.4.3 Genetic diversity": [
+        "4.3 Genetic diversity": [
             "Meiosis and genetic variation through crossing over and independent assortment",
             "Mutations as source of genetic variation",
             "Types of mutation: substitution, deletion, insertion, inversion, duplication"
         ],
-        "3.4.4 Genetic diversity and adaptation": [
+        "4.4 Genetic diversity and adaptation": [
             "Natural selection as mechanism for evolution",
             "Species as groups of organisms with similar morphology and physiology",
             "Reproductive isolation as barrier to gene flow"
         ],
-        "3.4.5 Species and taxonomy": [
+        "4.5 Species and taxonomy": [
             "Binomial system of naming species",
             "Courtship behaviour as part of reproductive isolation",
             "Evidence for relatedness between organisms"
         ],
-        "3.4.6 Investigating diversity": [
+        "4.6 Investigating diversity": [
             "Index of diversity formula",
             "Genetic diversity within and between populations"
         ]
     },
-    "3.5 Energy transfers (A-level)": {
-        "3.5.1 Photosynthesis": [
+    "5.0 Energy transfers": {
+        "5.1 Photosynthesis": [
             "Light-dependent reaction: photoionisation of chlorophyll, photolysis of water, electron transport chain, production of ATP and reduced NADP",
             "Light-independent reaction: Calvin cycle, carbon fixation, reduction of glycerate-3-phosphate, regeneration of ribulose bisphosphate",
             "Factors affecting rate of photosynthesis"
         ],
-        "3.5.2 Respiration": [
+        "5.2 Respiration": [
             "Glycolysis: phosphorylation of glucose, lysis into triose phosphate, oxidation to pyruvate",
             "Link reaction: decarboxylation and dehydrogenation of pyruvate to form acetylcoenzyme A",
             "Krebs cycle: decarboxylation and dehydrogenation, substrate-level phosphorylation, formation of reduced coenzymes",
             "Electron transport chain and oxidative phosphorylation",
             "Anaerobic respiration in animals and yeast"
         ],
-        "3.5.3 Energy and ecosystems": [
+        "5.3 Energy and ecosystems": [
             "Gross primary production and net primary production",
             "Efficiency of energy transfer between trophic levels",
             "Recycling of nitrogen and phosphorus in ecosystems"
         ],
-        "3.5.4 Nutrient cycling": [
+        "5.4 Nutrient cycling": [
             "Role of microorganisms in decomposition",
             "Nitrogen cycle: nitrogen fixation, nitrification, denitrification, ammonification",
             "Phosphorus cycle"
         ]
     },
-    "3.6 Organisms respond (A-level)": {
-        "3.6.1 Stimuli and responses": [
+    "6.0 Organisms respond": {
+        "6.1 Stimuli and responses": [
             "Survival and response: taxes, kineses and tropisms",
             "Role of IAA as auxin in phototropism and gravitropism"
         ],
-        "3.6.2 Nervous coordination": [
+        "6.2 Nervous coordination": [
             "Structure and function of mammalian nervous system",
             "Structure and function of myelinated motor neurone",
             "Generation and transmission of action potentials",
             "Saltatory conduction",
             "Structure and function of synapses including neurotransmitters"
         ],
-        "3.6.3 Muscles": [
+        "6.3 Muscles": [
             "Structure of skeletal muscle: myofibrils, sarcomeres, actin and myosin filaments",
             "Sliding filament mechanism of muscle contraction",
             "Role of ATP and calcium ions in muscle contraction"
         ],
-        "3.6.4 Homeostasis": [
+        "6.4 Homeostasis": [
             "Principles of homeostasis: negative feedback",
             "Control of blood glucose concentration including role of insulin and glucagon",
             "Control of blood water potential including role of ADH and osmoreceptors"
         ]
     },
-    "3.7 Genetics, populations (A-level)": {
-        "3.7.1 Inheritance": [
+    "7.0 Genetics and populations": {
+        "7.1 Inheritance": [
             "Genetic crosses and pedigree diagrams",
             "Chi-squared test",
             "Epistasis and lethal alleles",
             "Sex linkage and codominance"
         ],
-        "3.7.2 Populations": [
+        "7.2 Populations": [
             "Hardy-Weinberg principle and equation",
             "Selection pressures and directional, stabilising and disruptive selection"
         ],
-        "3.7.3 Evolution": [
+        "7.3 Evolution": [
             "Speciation: allopatric and sympatric",
             "Genetic drift and bottleneck effect",
             "Founder effect"
         ],
-        "3.7.4 Ecosystems": [
+        "7.4 Ecosystems": [
             "Succession: primary and secondary",
             "Conservation of habitats and species"
         ]
     },
-    "3.8 Gene expression (A-level)": {
-        "3.8.1 Mutations and gene expression": [
+    "8.0 Gene expression": {
+        "8.1 Mutations and gene expression": [
             "Types of gene mutation: substitution, deletion, insertion",
             "Effect of mutations on protein structure and function",
             "Oncogenes and tumour suppressor genes"
         ],
-        "3.8.2 Regulation of gene expression": [
+        "8.2 Regulation of gene expression": [
             "Transcription factors and gene expression",
             "Oestrogen and regulation of gene expression",
             "SiRNA and gene silencing"
         ],
-        "3.8.3 Using genome projects": [
+        "8.3 Using genome projects": [
             "Gene sequencing and genome sequencing",
             "Bioinformatics and understanding of gene function"
         ],
-        "3.8.4 Gene technologies": [
+        "8.4 Gene technologies": [
             "Recombinant DNA technology: restriction endonucleases, ligases, plasmids",
             "In vivo and in vitro gene cloning",
             "Genetic fingerprinting and PCR"
