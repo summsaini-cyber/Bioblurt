@@ -5,6 +5,16 @@ import os
 from datetime import datetime
 from difflib import SequenceMatcher
 
+# PWA support
+st.markdown("""
+    <link rel="manifest" href="manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+""", unsafe_allow_html=True)
+
 # Page config - minimalistic Anki-style
 st.set_page_config(
     page_title="BioBlurt - AQA Biology Active Recall",
