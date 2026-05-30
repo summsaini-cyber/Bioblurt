@@ -4,6 +4,7 @@ import json
 import os
 from datetime import datetime
 from difflib import SequenceMatcher
+import streamlit.components.v1 as components
 
 components.html(
     """
