@@ -81,9 +81,9 @@ st.markdown("""
         border-color: #4CAF50;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    .rag-red { color: #f44336; font-weight: bold; display: block; text-align: center; padding-top 20px; }
-    .rag-amber { color: #ff9800; font-weight: bold; display: block; text-align: center; padding-top 20px; }
-    .rag-green { color: #4CAF50; font-weight: bold; display: block; text-align: center; padding-top 20px; }
+    .rag-red { color: #f44336 !important; font-weight: bold !important; display: block !important; text-align: center !important; padding-top 10px !important; }
+    .rag-amber { color: #ff9800 !important; font-weight: bold !important; display: block !important; text-align: center !important; padding-top 10px !important; }
+    .rag-green { color: #4CAF50 !important; font-weight: bold !important; display: block !important; text-align: center !important; padding-top 10px !important; }
     .score-display {
         font-size: 48px;
         font-weight: bold;
@@ -96,7 +96,7 @@ st.markdown("""
         border-radius: 20px;
         font-weight: bold;
         font-size: 14px;
-        margin-top: 8px;
+        margin-top: 7px;
     }
     .rank-beginner { background-color: #ffebee; color: #c62828; }
     .rank-developing { background-color: #fff3e0; color: #ef6c00; }
