@@ -49,7 +49,7 @@ st.markdown("""
     .rank-shifted {
         display: block;
         text-align: center;
-        padding-top: 8px;
+        padding-top: 20px;
     }
     .main {
         background-color: #fafafa;
