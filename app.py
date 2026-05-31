@@ -47,8 +47,8 @@ st.markdown("""
         display: inline-block;
     }
     .rank-shifted {
-        margin_bottom: 10px;
-        dispay: inline-block;
+        margin-bottom: 10px;
+        display: inline-block;
     }
     .main {
         background-color: #fafafa;
