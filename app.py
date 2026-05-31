@@ -41,6 +41,15 @@ st.set_page_config(
 # Custom CSS for minimalistic Anki-style look
 st.markdown("""
 <style>
+    .new-text {
+        color: #999;
+        margin-top: 10px;
+        display: inline-block;
+    }
+    .rank-shifted {
+        margin_bottom: 10px;
+        dispay: inline-block;
+    }
     .main {
         background-color: #fafafa;
     }
@@ -492,13 +501,13 @@ if st.session_state.selected_subtopic is None:
                     status, css_class = get_rag_status(score)
                     st.markdown(f"<span class='{css_class}'>{status}</span>", unsafe_allow_html=True)
                 else:
-                    st.markdown("<span style='color: #999;'>New</span>", unsafe_allow_html=True)
+                    st.markdown("<span class='new-text'>New</span>", unsafe_allow_html=True)
             with col3:
                 key = f"{st.session_state.selected_topic}|{subtopic_name}"
                 if key in st.session_state.progress:
                     score = st.session_state.progress[key]['score']
                     rank, rank_class = get_rank(score)
-                    st.markdown(f"<span class='rank-badge {rank_class}' style='margin-bottom: 10px;'>{rank}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='rank-badge {rank_class} rank-shifted'>{rank}</span>", unsafe_allow_html=True)
 
 else:
     # Blurting screen
