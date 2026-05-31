@@ -1,4 +1,3 @@
-
 import streamlit as st
 import json
 import os
@@ -43,12 +42,17 @@ st.markdown("""
 <style>
     .new-text {
         color: #999;
-        margin-top: 10px;
-        display: inline-block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-size: 14px;
     }
     .rank-shifted {
-        margin-bottom: 10px;
-        display: inline-block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
     }
     .main {
         background-color: #fafafa;
@@ -58,6 +62,7 @@ st.markdown("""
         border-radius: 8px;
         border: 2px solid #e0e0e0;
         background-color: black;
+        color: #FFFFFF !important;
     }
     .stTextArea textarea:focus {
         border-color: #999999;
@@ -95,7 +100,6 @@ st.markdown("""
         border-radius: 20px;
         font-weight: bold;
         font-size: 14px;
-        margin-top: 10px;
     }
     .rank-beginner { background-color: #ffebee; color: #c62828; }
     .rank-developing { background-color: #fff3e0; color: #ef6c00; }
@@ -475,7 +479,7 @@ if st.session_state.selected_subtopic is None:
                     status, css_class = get_rag_status(avg)
                     st.markdown(f"<span class='{css_class}'>{status}</span>", unsafe_allow_html=True)
                 else:
-                    st.markdown("<span style='color: #999; margin-top: 5px; '>New</span>", unsafe_allow_html=True)
+                    st.markdown("<span class='new-text'>New</span>", unsafe_allow_html=True)
     else:
         # Subtopic selection screen
         st.subheader(f"📚 {st.session_state.selected_topic}")
