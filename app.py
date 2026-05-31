@@ -49,7 +49,6 @@ st.markdown("""
     .rank-shifted {
         display: block;
         text-align: center;
-        padding-top: 14px;
     }
     .main {
         background-color: #fafafa;
@@ -97,6 +96,7 @@ st.markdown("""
         border-radius: 20px;
         font-weight: bold;
         font-size: 14px;
+        margin-top: 8px;
     }
     .rank-beginner { background-color: #ffebee; color: #c62828; }
     .rank-developing { background-color: #fff3e0; color: #ef6c00; }
