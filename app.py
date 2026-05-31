@@ -42,17 +42,14 @@ st.markdown("""
 <style>
     .new-text {
         color: #999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        font-size: 14px;
+        display: block;
+        text-align: center;
+        padding-top: 10px;
     }
     .rank-shifted {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
+        display: block;
+        text-align: center;
+        padding-top: 8px;
     }
     .main {
         background-color: #fafafa;
