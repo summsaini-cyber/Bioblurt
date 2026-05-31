@@ -44,12 +44,12 @@ st.markdown("""
         color: #999;
         display: block;
         text-align: center;
-        padding-top: 10px;
+        padding-top: 6px;
     }
     .rank-shifted {
         display: block;
         text-align: center;
-        padding-top: 20px;
+        padding-top: 10px;
     }
     .main {
         background-color: #fafafa;
@@ -82,9 +82,9 @@ st.markdown("""
         border-color: #4CAF50;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    .rag-red { color: #f44336; font-weight: bold; }
-    .rag-amber { color: #ff9800; font-weight: bold; }
-    .rag-green { color: #4CAF50; font-weight: bold; }
+    .rag-red { color: #f44336; font-weight: bold; display: block; text-align: center; padding-top 6px; }
+    .rag-amber { color: #ff9800; font-weight: bold; display: block; text-align: center; padding-top 6px; }
+    .rag-green { color: #4CAF50; font-weight: bold; display: block; text-align: center; padding-top 6px; }
     .score-display {
         font-size: 48px;
         font-weight: bold;
