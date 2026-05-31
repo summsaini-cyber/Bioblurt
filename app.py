@@ -466,7 +466,7 @@ if st.session_state.selected_subtopic is None:
                     status, css_class = get_rag_status(avg)
                     st.markdown(f"<span class='{css_class}'>{status}</span>", unsafe_allow_html=True)
                 else:
-                    st.markdown("<span style='color: #999;'>New</span>", unsafe_allow_html=True)
+                    st.markdown("<span style='color: #999; margin-top: 5px; '>New</span>", unsafe_allow_html=True)
     else:
         # Subtopic selection screen
         st.subheader(f"📚 {st.session_state.selected_topic}")
@@ -498,7 +498,7 @@ if st.session_state.selected_subtopic is None:
                 if key in st.session_state.progress:
                     score = st.session_state.progress[key]['score']
                     rank, rank_class = get_rank(score)
-                    st.markdown(f"<span class='rank-badge {rank_class}'>{rank}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='rank-badge {rank_class}' style='margin-bottom: 10px;'>{rank}</span>", unsafe_allow_html=True)
 
 else:
     # Blurting screen
