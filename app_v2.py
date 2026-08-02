@@ -2,14 +2,8 @@ import streamlit as st
 import json
 import os
 from datetime import datetime
+from difflib import SequenceMatcher
 
-# Page config
-st.set_page_config(
-    page_title="BioBlurt - AQA Biology Active Recall",
-    page_icon="🧬",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
 # ============ PWA SUPPORT ============
 st.markdown("""
     <link rel="manifest" href="manifest.json">
@@ -20,133 +14,63 @@ st.markdown("""
     </script>
 """, unsafe_allow_html=True)
 
+st.set_page_config(
+    page_title="BioBlurt - AQA Biology Active Recall",
+    page_icon="🧬",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
+
 # ============ CSS ============
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+    .main { background-color: #0f0f0f; }
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
-
-    .main {
-        background-color: #0f0f0f;
-    }
-
-    /* Topic cards */
-    div[data-testid="stHorizontalBlock"] {
-        align-items: center !important;
-    }
-
-    /* Center column content vertically */
+    div[data-testid="stHorizontalBlock"] { align-items: center !important; }
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+        display: flex; flex-direction: column; justify-content: center;
     }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"] > div { width: 100%; }
 
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"] > div {
-        width: 100%;
-    }
-
-    .new-text {
-        color: #888;
-        font-size: 13px;
-        display: block;
-        text-align: center;
-        font-weight: 500;
-        letter-spacing: 0.5px;
-    }
-
-    .rag-status {
-        display: block;
-        text-align: center;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-
-    .rag-red { color: #ff4444; }
-    .rag-amber { color: #ffaa00; }
-    .rag-green { color: #44ff88; }
+    .new-text { color: #888; font-size: 13px; display: block; text-align: center; font-weight: 500; }
+    .rag-status { display: block; text-align: center; font-size: 13px; font-weight: 600; }
+    .rag-red { color: #ff4444; } .rag-amber { color: #ffaa00; } .rag-green { color: #44ff88; }
 
     .rank-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 11px;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
+        display: inline-block; padding: 4px 12px; border-radius: 12px;
+        font-weight: 600; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;
     }
-
     .rank-beginner { background-color: #ffebee; color: #c62828; }
     .rank-developing { background-color: #fff3e0; color: #ef6c00; }
     .rank-proficient { background-color: #e8f5e9; color: #2e7d32; }
-    .rank-master { background-color: #e3f2fd; color: #1565c0; }
+    .rank-advanced { background-color: #e3f2fd; color: #1565c0; }
+    .rank-master { background-color: #f3e5f5; color: #6a1b9a; }
 
     .stTextArea textarea {
-        font-size: 16px;
-        border-radius: 12px;
-        border: 2px solid #333;
-        background-color: #1a1a1a;
-        color: #ffffff !important;
-        padding: 16px;
-        line-height: 1.6;
+        font-size: 16px; border-radius: 12px; border: 2px solid #333;
+        background-color: #1a1a1a; color: #ffffff !important; padding: 16px; line-height: 1.6;
     }
+    .stTextArea textarea:focus { border-color: #4CAF50; box-shadow: 0 0 0 3px rgba(76,175,80,0.1); }
+    .stTextArea textarea::placeholder { color: #666; }
 
-    .stTextArea textarea:focus {
-        border-color: #4CAF50;
-        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-    }
+    .stButton button { border-radius: 10px; font-weight: 600; transition: all 0.2s ease; }
+    .stButton button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .stButton > button[kind="primary"] { background-color: #4CAF50; border: none; }
+    .stButton > button[kind="primary"]:hover { background-color: #45a049; }
 
-    .stTextArea textarea::placeholder {
-        color: #666;
-    }
+    .score-display { font-size: 56px; font-weight: 700; text-align: center; margin: 24px 0; letter-spacing: -2px; }
 
-    .stButton button {
-        border-radius: 10px;
-        font-weight: 600;
-        transition: all 0.2s ease;
+    .weak-topic-card {
+        background-color: #1a1a1a; border: 1px solid #333; border-radius: 10px;
+        padding: 12px 16px; margin-bottom: 8px;
     }
-
-    .stButton button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-
-    .score-display {
-        font-size: 56px;
-        font-weight: 700;
-        text-align: center;
-        margin: 24px 0;
-        letter-spacing: -2px;
-    }
-
-    /* Override Streamlit's default button styles */
-    .stButton > button[kind="primary"] {
-        background-color: #4CAF50;
-        border: none;
-    }
-
-    .stButton > button[kind="primary"]:hover {
-        background-color: #45a049;
-    }
-
-    /* Success/error message styling */
-    .stSuccess {
-        background-color: #1a3a1a !important;
-        border-left-color: #4CAF50 !important;
-    }
-
-    .stError {
-        background-color: #3a1a1a !important;
-        border-left-color: #ff4444 !important;
-    }
+    .weak-topic-card:hover { border-color: #ff4444; }
 </style>
 """, unsafe_allow_html=True)
 
-# ============ COMPLETE AQA BIOLOGY A-LEVEL SPEC ============
+# ============ COMPLETE AQA SPEC ============
 AQA_TOPICS = {
     "3.1 Biological molecules": {
         "3.1.1 Monomers and polymers": [
@@ -433,20 +357,31 @@ AQA_TOPICS = {
     }
 }
 
-# ============ DATA PERSISTENCE ============
+# ============ ROBUST DATA PERSISTENCE ============
 DATA_FILE = "bioblurt_progress.json"
 
-def load_progress():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as f:
-            return json.load(f)
+def safe_load_progress():
+    """Load progress with error handling."""
+    try:
+        if os.path.exists(DATA_FILE):
+            with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+    except (json.JSONDecodeError, IOError, PermissionError):
+        pass
     return {}
 
-def save_progress(progress):
-    with open(DATA_FILE, 'w') as f:
-        json.dump(progress, f, indent=2)
+def safe_save_progress(progress):
+    """Save progress with error handling."""
+    try:
+        with open(DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(progress, f, indent=2)
+        return True
+    except (IOError, PermissionError):
+        return False
 
-# ============ SMART SCORING ENGINE ============
+# ============ STRICTER SCORING ENGINE ============
 STOP_WORDS = {
     'the', 'and', 'are', 'from', 'that', 'with', 'for', 'can', 'its', 'has',
     'have', 'this', 'into', 'been', 'they', 'their', 'them', 'than', 'then',
@@ -454,54 +389,34 @@ STOP_WORDS = {
     'under', 'over', 'such', 'each', 'both', 'all', 'any', 'some', 'many',
     'most', 'more', 'less', 'very', 'also', 'only', 'just', 'but', 'not',
     'however', 'therefore', 'because', 'since', 'although', 'though', 'unless',
-    'whether', 'either', 'neither', 'both', 'either', 'nor', 'yet', 'so',
-    'as', 'at', 'by', 'in', 'of', 'on', 'to', 'up', 'via', 'per', 'a', 'an',
-    'is', 'it', 'be', 'or', 'if', 'do', 'does', 'did', 'will', 'would', 'could',
-    'should', 'may', 'might', 'must', 'shall', 'was', 'were', 'had', 'has',
-    'having', 'being', 'made', 'used', 'using', 'form', 'forms', 'formed',
-    'role', 'roles', 'function', 'functions', 'structure', 'structures',
-    'process', 'processes', 'including', 'involves', 'involving', 'including'
+    'whether', 'either', 'neither', 'yet', 'so', 'as', 'at', 'by', 'in', 'of',
+    'on', 'to', 'up', 'via', 'per', 'a', 'an', 'is', 'it', 'be', 'or', 'if',
+    'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might',
+    'must', 'shall', 'was', 'were', 'had', 'having', 'being', 'made', 'used',
+    'using', 'form', 'forms', 'formed', 'role', 'roles', 'function', 'functions',
+    'structure', 'structures', 'process', 'processes', 'including', 'involves',
+    'involving', 'called', 'known', 'found', 'present', 'produced', 'produces',
+    'produce', 'give', 'gives', 'given', 'take', 'takes', 'taken', 'make',
+    'makes', 'use', 'uses', 'using', 'used', 'one', 'two', 'three', 'first',
+    'second', 'third', 'other', 'another', 'same', 'different', 'similar',
+    'various', 'certain', 'specific', 'particular', 'general', 'main', 'major',
+    'important', 'essential', 'necessary', 'required', 'needed', 'able', 'due',
+    'via', 'through', 'across', 'along', 'around', 'against', 'towards',
+    'away', 'down', 'off', 'out', 'over', 'under', 'upon', 'within', 'without'
 }
 
 def extract_keywords(text):
-    """Extract meaningful keywords from text, removing stop words."""
+    """Extract meaningful keywords from text."""
     words = text.lower().split()
     keywords = []
     for word in words:
         clean = ''.join(c for c in word if c.isalnum())
-        if len(clean) >= 3 and clean not in STOP_WORDS:
+        if len(clean) >= 4 and clean not in STOP_WORDS:
             keywords.append(clean)
     return keywords
 
-def similarity_score(user_keywords, point_keywords):
-    """Calculate fuzzy similarity between two sets of keywords."""
-    if not point_keywords:
-        return 0.0
-
-    matched = 0
-    for pk in point_keywords:
-        best_match = 0
-        for uk in user_keywords:
-            # Exact match
-            if pk == uk:
-                best_match = 1.0
-                break
-            # Contains match (e.g., "monosaccharide" contains "saccharide")
-            elif pk in uk or uk in pk:
-                best_match = max(best_match, 0.8)
-            # Fuzzy match for typos/close words
-            else:
-                ratio = SequenceMatcher(None, pk, uk).ratio()
-                if ratio > 0.75:
-                    best_match = max(best_match, ratio)
-
-        if best_match > 0.5:
-            matched += best_match
-
-    return matched / len(point_keywords)
-
 def calculate_score(user_text, spec_points):
-    """Score user blurt against spec points using smart keyword matching."""
+    """Stricter scoring: 60% similarity threshold, exact matching preferred."""
     if not user_text or not user_text.strip():
         return 0.0, []
 
@@ -514,10 +429,31 @@ def calculate_score(user_text, spec_points):
 
     for point in spec_points:
         point_keywords = extract_keywords(point)
-        sim = similarity_score(user_keywords, point_keywords)
+        if not point_keywords:
+            continue
 
-        # Point is "matched" if similarity >= 40%
-        if sim >= 0.4:
+        matched_count = 0
+        total_weight = 0
+
+        for pk in point_keywords:
+            total_weight += 1
+            best = 0
+            for uk in user_keywords:
+                if pk == uk:
+                    best = 1.0
+                    break
+                elif pk in uk and len(pk) >= 6:
+                    best = max(best, 0.6)
+                else:
+                    ratio = SequenceMatcher(None, pk, uk).ratio()
+                    if ratio > 0.85:
+                        best = max(best, ratio * 0.7)
+
+            if best >= 0.5:
+                matched_count += best
+
+        similarity = matched_count / total_weight if total_weight > 0 else 0
+        if similarity >= 0.55:
             matched_points.append(point)
 
     score = (len(matched_points) / total_points * 100) if total_points > 0 else 0
@@ -531,15 +467,15 @@ def get_rank(percentage):
         return "Developing", "rank-developing"
     elif percentage < 70:
         return "Proficient", "rank-proficient"
+    elif percentage < 90:
+        return "Advanced", "rank-advanced"
     else:
         return "Master", "rank-master"
 
 def get_rag_status(score, manual_rag=None):
-    """Get RAG status. Uses manual override if set, otherwise score-based."""
     if manual_rag:
         colors = {"Red": "rag-red", "Amber": "rag-amber", "Green": "rag-green"}
         return manual_rag, colors.get(manual_rag, "rag-red")
-
     if score < 40:
         return "Red", "rag-red"
     elif score < 65:
@@ -547,9 +483,43 @@ def get_rag_status(score, manual_rag=None):
     else:
         return "Green", "rag-green"
 
+# ============ WEAK TOPIC DETECTOR ============
+def get_weak_topics(progress):
+    """Return list of topics needing review, sorted by priority."""
+    weak = []
+    for topic_name, subtopics in AQA_TOPICS.items():
+        for sub_name in subtopics:
+            key = f"{topic_name}|{sub_name}"
+            if key in progress:
+                data = progress[key]
+                best = data.get('best_score', 0)
+                manual = data.get('manual_rag', None)
+                if manual == "Red" or (manual is None and best < 50):
+                    weak.append({
+                        'key': key,
+                        'topic': topic_name,
+                        'subtopic': sub_name,
+                        'score': best,
+                        'rag': manual or get_rag_status(best)[0],
+                        'reason': 'Manual Red' if manual == 'Red' else f'Score {best}%'
+                    })
+            else:
+                weak.append({
+                    'key': key,
+                    'topic': topic_name,
+                    'subtopic': sub_name,
+                    'score': 0,
+                    'rag': 'New',
+                    'reason': 'Not attempted'
+                })
+
+    # Sort: manual Red first, then by lowest score
+    weak.sort(key=lambda x: (0 if x['rag'] == 'Red' else 1, x['score']))
+    return weak[:6]  # Top 6 recommendations
+
 # ============ SESSION STATE ============
 if 'progress' not in st.session_state:
-    st.session_state.progress = load_progress()
+    st.session_state.progress = safe_load_progress()
 
 if 'selected_topic' not in st.session_state:
     st.session_state.selected_topic = None
@@ -560,17 +530,34 @@ if 'selected_subtopic' not in st.session_state:
 if 'current_score' not in st.session_state:
     st.session_state.current_score = 0
 
-# ============ UI ============
+# ============ MAIN UI ============
 st.title("🧬 BioBlurt")
 st.markdown("<p style='text-align: center; color: #888; margin-top: -10px; font-size: 14px;'>Active Recall for AQA A-Level Biology</p>", unsafe_allow_html=True)
 st.markdown("---")
 
-# ============ NAVIGATION ============
+# Navigation
 if st.session_state.selected_subtopic is None:
-    # Topic selection screen
     if st.session_state.selected_topic is None:
+        # HOME SCREEN
         st.subheader("Select a Topic")
 
+        # Weak topic recommendations
+        weak_topics = get_weak_topics(st.session_state.progress)
+        if weak_topics:
+            st.markdown("### 📉 Recommended Review")
+            for wt in weak_topics:
+                with st.container():
+                    c1, c2 = st.columns([4, 1])
+                    with c1:
+                        st.markdown(f"<div class='weak-topic-card'><b>{wt['subtopic']}</b><br/><span style='color:#888;font-size:12px;'>{wt['topic']} • {wt['reason']}</span></div>", unsafe_allow_html=True)
+                    with c2:
+                        if st.button("Review", key=f"review_{wt['key']}"):
+                            st.session_state.selected_topic = wt['topic']
+                            st.session_state.selected_subtopic = wt['subtopic']
+                            st.rerun()
+            st.markdown("---")
+
+        # Topic list
         for topic_name, subtopics in AQA_TOPICS.items():
             col1, col2 = st.columns([4, 1])
             with col1:
@@ -579,24 +566,21 @@ if st.session_state.selected_subtopic is None:
                     st.rerun()
             with col2:
                 topic_scores = []
+                any_manual = None
                 for sub in subtopics:
                     key = f"{topic_name}|{sub}"
                     if key in st.session_state.progress:
-                        topic_scores.append(st.session_state.progress[key].get('score', 0))
+                        topic_scores.append(st.session_state.progress[key].get('best_score', 0))
+                        if st.session_state.progress[key].get('manual_rag'):
+                            any_manual = st.session_state.progress[key]['manual_rag']
                 if topic_scores:
                     avg = sum(topic_scores) / len(topic_scores)
-                    manual = None
-                    for sub in subtopics:
-                        k = f"{topic_name}|{sub}"
-                        if k in st.session_state.progress and st.session_state.progress[k].get('rag'):
-                            manual = st.session_state.progress[k].get('rag')
-                            break
-                    status, css_class = get_rag_status(avg, manual)
+                    status, css_class = get_rag_status(avg, any_manual)
                     st.markdown(f"<span class='rag-status {css_class}'>{status}</span>", unsafe_allow_html=True)
                 else:
                     st.markdown("<span class='new-text'>New</span>", unsafe_allow_html=True)
     else:
-        # Subtopic selection screen
+        # SUBTOPIC SCREEN
         st.subheader(f"📚 {st.session_state.selected_topic}")
 
         if st.button("← Back to Topics", key="back_to_topics"):
@@ -616,8 +600,8 @@ if st.session_state.selected_subtopic is None:
             with col2:
                 key = f"{st.session_state.selected_topic}|{subtopic_name}"
                 if key in st.session_state.progress:
-                    score = st.session_state.progress[key].get('score', 0)
-                    manual = st.session_state.progress[key].get('rag', None)
+                    score = st.session_state.progress[key].get('best_score', 0)
+                    manual = st.session_state.progress[key].get('manual_rag', None)
                     status, css_class = get_rag_status(score, manual)
                     st.markdown(f"<span class='rag-status {css_class}'>{status}</span>", unsafe_allow_html=True)
                 else:
@@ -625,12 +609,12 @@ if st.session_state.selected_subtopic is None:
             with col3:
                 key = f"{st.session_state.selected_topic}|{subtopic_name}"
                 if key in st.session_state.progress:
-                    score = st.session_state.progress[key].get('score', 0)
+                    score = st.session_state.progress[key].get('best_score', 0)
                     rank, rank_class = get_rank(score)
                     st.markdown(f"<div style='text-align: center; padding-top: 2px;'><span class='rank-badge {rank_class}'>{rank}</span></div>", unsafe_allow_html=True)
 
 else:
-    # Blurting screen
+    # BLURT SCREEN
     topic = st.session_state.selected_topic
     subtopic = st.session_state.selected_subtopic
     spec_points = AQA_TOPICS[topic][subtopic]
@@ -652,34 +636,32 @@ else:
 
     st.markdown("---")
 
-    # Show current status
+    # Current status
     progress_key = f"{topic}|{subtopic}"
     if progress_key in st.session_state.progress:
-        current_data = st.session_state.progress[progress_key]
-        current_score = current_data.get('score', 0)
-        manual_rag = current_data.get('rag', None)
+        data = st.session_state.progress[progress_key]
+        current_score = data.get('best_score', 0)
+        manual_rag = data.get('manual_rag', None)
         status, css_class = get_rag_status(current_score, manual_rag)
         rank, rank_class = get_rank(current_score)
+        attempts = data.get('attempts', 0)
 
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.markdown(f"**Current Status:** <span class='{css_class}'>{status}</span>", unsafe_allow_html=True)
+            st.markdown(f"**Status:** <span class='{css_class}'>{status}</span>", unsafe_allow_html=True)
         with col2:
-            st.markdown(f"**Best Score:** {current_score}%")
+            st.markdown(f"**Best:** {current_score}%")
         with col3:
             st.markdown(f"<span class='rank-badge {rank_class}'>{rank}</span>", unsafe_allow_html=True)
+        with col4:
+            st.markdown(f"**Attempts:** {attempts}")
         st.markdown("---")
 
     # Blurt input
-    st.markdown("### 🧠 Blurt everything you know about this topic:")
-    st.markdown("<p style='color: #888; font-size: 14px;'>Type everything you can remember. Don't worry about perfect sentences — just get the key concepts down!</p>", unsafe_allow_html=True)
+    st.markdown("### 🧠 Blurt everything you know:")
+    st.markdown("<p style='color: #888; font-size: 14px;'>Type everything you remember. Key concepts matter more than perfect sentences.</p>", unsafe_allow_html=True)
 
-    user_blurt = st.text_area(
-        "",
-        height=300,
-        placeholder="Start typing your blurt here...",
-        key="blurt_input"
-    )
+    user_blurt = st.text_area("", height=300, placeholder="Start typing your blurt here...", key="blurt_input")
 
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
@@ -688,30 +670,38 @@ else:
                 score, matched = calculate_score(user_blurt, spec_points)
                 st.session_state.current_score = score
 
+                # ROBUST SAVE: merge with existing data, never overwrite
                 progress_key = f"{topic}|{subtopic}"
                 existing = st.session_state.progress.get(progress_key, {})
+
+                # Keep best score, increment attempts, preserve manual RAG
+                best_so_far = existing.get('best_score', 0)
+                new_best = max(score, best_so_far)
+
                 st.session_state.progress[progress_key] = {
-                    "score": score,
-                    "rag": existing.get('rag', get_rag_status(score)[0]),
-                    "last_attempt": datetime.now().isoformat(),
-                    "attempts": existing.get("attempts", 0) + 1
+                    "best_score": new_best,
+                    "last_score": score,
+                    "attempts": existing.get("attempts", 0) + 1,
+                    "scores_history": existing.get("scores_history", []) + [score],
+                    "manual_rag": existing.get("manual_rag", None),
+                    "last_attempt": datetime.now().isoformat()
                 }
-                save_progress(st.session_state.progress)
+                safe_save_progress(st.session_state.progress)
                 st.rerun()
             else:
                 st.error("Please write something before submitting!")
 
-    # Show results
+    # Results
     if st.session_state.current_score > 0 or progress_key in st.session_state.progress:
         if st.session_state.current_score > 0:
             display_score = st.session_state.current_score
         else:
-            display_score = st.session_state.progress[progress_key].get('score', 0)
+            display_score = st.session_state.progress[progress_key].get('best_score', 0)
 
         st.markdown("---")
         st.markdown("### 📊 Results")
 
-        manual_rag = st.session_state.progress.get(progress_key, {}).get('rag', None)
+        manual_rag = st.session_state.progress.get(progress_key, {}).get('manual_rag', None)
         status, css_class = get_rag_status(display_score, manual_rag)
         rank, rank_class = get_rank(display_score)
 
@@ -724,13 +714,15 @@ else:
             st.markdown(f"<span class='{css_class}' style='font-size: 24px;'>{status}</span>", unsafe_allow_html=True)
 
             if display_score < 40:
-                st.markdown("🔴 **Red** — Keep studying this topic!")
+                st.markdown("🔴 **Red** — Needs significant revision")
             elif display_score < 65:
-                st.markdown("🟡 **Amber** — Getting there, review missed points")
+                st.markdown("🟡 **Amber** — Partial understanding, review missed points")
+            elif display_score < 90:
+                st.markdown("🟢 **Green** — Strong recall")
             else:
-                st.markdown("🟢 **Green** — Great recall! Move to next topic")
+                st.markdown("🏆 **Master** — Excellent! Maintain with spaced review")
 
-        # Spec points breakdown
+        # Spec breakdown
         st.markdown("---")
         st.markdown("### 📝 Specification Points Check")
 
@@ -742,40 +734,37 @@ else:
             else:
                 st.error(f"❌ {point}")
 
-        # Manual RAG override — FIXED
+        # Manual RAG override
         st.markdown("---")
         st.markdown("### 🎯 Manual RAG Assessment")
-        st.markdown("<p style='color: #888; font-size: 13px;'>How do YOU feel about this topic? Override the auto-score below.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #888; font-size: 13px;'>Override the auto-score if you feel differently.</p>", unsafe_allow_html=True)
 
-        rag_col1, rag_col2, rag_col3 = st.columns(3)
+        rag_col1, rag_col2, rag_col3, rag_col4 = st.columns(4)
         with rag_col1:
             if st.button("🔴 Red", key="manual_red", use_container_width=True):
-                progress_key = f"{topic}|{subtopic}"
-                if progress_key not in st.session_state.progress:
-                    st.session_state.progress[progress_key] = {}
-                st.session_state.progress[progress_key]['rag'] = "Red"
-                save_progress(st.session_state.progress)
-                st.success("Set to Red!")
+                st.session_state.progress.setdefault(progress_key, {})
+                st.session_state.progress[progress_key]['manual_rag'] = "Red"
+                safe_save_progress(st.session_state.progress)
                 st.rerun()
         with rag_col2:
             if st.button("🟡 Amber", key="manual_amber", use_container_width=True):
-                progress_key = f"{topic}|{subtopic}"
-                if progress_key not in st.session_state.progress:
-                    st.session_state.progress[progress_key] = {}
-                st.session_state.progress[progress_key]['rag'] = "Amber"
-                save_progress(st.session_state.progress)
-                st.success("Set to Amber!")
+                st.session_state.progress.setdefault(progress_key, {})
+                st.session_state.progress[progress_key]['manual_rag'] = "Amber"
+                safe_save_progress(st.session_state.progress)
                 st.rerun()
         with rag_col3:
             if st.button("🟢 Green", key="manual_green", use_container_width=True):
-                progress_key = f"{topic}|{subtopic}"
-                if progress_key not in st.session_state.progress:
-                    st.session_state.progress[progress_key] = {}
-                st.session_state.progress[progress_key]['rag'] = "Green"
-                save_progress(st.session_state.progress)
-                st.success("Set to Green!")
+                st.session_state.progress.setdefault(progress_key, {})
+                st.session_state.progress[progress_key]['manual_rag'] = "Green"
+                safe_save_progress(st.session_state.progress)
+                st.rerun()
+        with rag_col4:
+            if st.button("↩️ Auto", key="manual_auto", use_container_width=True):
+                st.session_state.progress.setdefault(progress_key, {})
+                st.session_state.progress[progress_key]['manual_rag'] = None
+                safe_save_progress(st.session_state.progress)
                 st.rerun()
 
 # Footer
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: #555; font-size: 12px;'>BioBlurt v2.0 | AQA Biology A-Level (7402) | Built with Streamlit</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #555; font-size: 12px;'>BioBlurt v3.0 | AQA Biology A-Level (7402)</p>", unsafe_allow_html=True)
