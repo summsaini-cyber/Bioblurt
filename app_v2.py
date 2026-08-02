@@ -2,9 +2,14 @@ import streamlit as st
 import json
 import os
 from datetime import datetime
-from difflib import SequenceMatcher
-import string
 
+# Page config
+st.set_page_config(
+    page_title="BioBlurt - AQA Biology Active Recall",
+    page_icon="🧬",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 # ============ PWA SUPPORT ============
 st.markdown("""
     <link rel="manifest" href="manifest.json">
@@ -14,14 +19,6 @@ st.markdown("""
         }
     </script>
 """, unsafe_allow_html=True)
-
-# Page config
-st.set_page_config(
-    page_title="BioBlurt - AQA Biology Active Recall",
-    page_icon="🧬",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
 
 # ============ CSS ============
 st.markdown("""
