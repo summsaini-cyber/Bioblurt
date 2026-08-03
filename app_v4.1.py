@@ -49,40 +49,6 @@ st.markdown("""
     .rank-advanced { background-color: #1a2a3a; color: #5599ff; border: 1px solid #5599ff; }
     .rank-master { background-color: #2a1a3a; color: #cc66ff; border: 1px solid #cc66ff; }
 
-    .dashboard-card {
-        background: linear-gradient(145deg, #141414, #1a1a1a);
-        border: 1px solid #222;
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 12px;
-    }
-    .dashboard-stat {
-        font-size: 32px; font-weight: 800; color: #fff;
-    }
-    .dashboard-label {
-        font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;
-    }
-    .weak-topic-card {
-        background: linear-gradient(145deg, #1a1111, #221111);
-        border: 1px solid #331111;
-        border-radius: 12px;
-        padding: 14px 18px;
-        margin-bottom: 8px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .weak-topic-card:hover { border-color: #ff5555; transform: translateX(4px); }
-    .topic-card-main {
-        background: linear-gradient(145deg, #141414, #1a1a1a);
-        border: 1px solid #222;
-        border-radius: 14px;
-        padding: 18px 20px;
-        margin-bottom: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .topic-card-main:hover { border-color: #4CAF50; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(76,175,80,0.1); }
-
     .stTextArea textarea {
         font-size: 16px; border-radius: 14px; border: 2px solid #222;
         background-color: #111; color: #eee !important; padding: 20px; line-height: 1.7;
@@ -97,12 +63,41 @@ st.markdown("""
 
     .score-display { font-size: 64px; font-weight: 800; text-align: center; margin: 28px 0; letter-spacing: -3px; }
 
+    .dashboard-card {
+        background: linear-gradient(145deg, #141414, #1a1a1a);
+        border: 1px solid #222; border-radius: 16px; padding: 20px; margin-bottom: 12px;
+    }
+    .dashboard-stat { font-size: 32px; font-weight: 800; color: #fff; }
+    .dashboard-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+    .weak-topic-card {
+        background: linear-gradient(145deg, #1a1111, #221111);
+        border: 1px solid #331111; border-radius: 12px;
+        padding: 14px 18px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+    }
+    .weak-topic-card:hover { border-color: #ff5555; transform: translateX(4px); }
+
+    .topic-card-main {
+        background: linear-gradient(145deg, #141414, #1a1a1a);
+        border: 1px solid #222; border-radius: 14px;
+        padding: 18px 20px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
+    }
+    .topic-card-main:hover { border-color: #4CAF50; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(76,175,80,0.1); }
+
     .progress-bar-bg { background: #222; border-radius: 8px; height: 8px; overflow: hidden; }
     .progress-bar-fill { height: 100%; border-radius: 8px; transition: width 0.5s ease; }
 
+    .tracker-item {
+        background: #111; border: 1px solid #222; border-radius: 12px;
+        padding: 16px 20px; margin-bottom: 10px;
+    }
+    .tracker-item:hover { border-color: #333; }
+
+    .tracker-covered { border-left: 4px solid #4CAF50; }
+    .tracker-uncovered { border-left: 4px solid #444; }
+
     h1, h2, h3 { color: #fff !important; }
     p, li { color: #ccc !important; }
-    .stMarkdown { color: #ccc; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -128,7 +123,8 @@ def safe_save_progress(progress):
     except:
         return False
 
-# ============ COMPLETE AQA SPEC WITH TEXTBOOK DEFINITIONS ============
+# ============ COMPLETE AQA SPEC ============
+AQA_TOPICS = {
 AQA_TOPICS = {
     "3.1 Biological molecules": {
         "3.1.1 Monomers and polymers": [
@@ -432,6 +428,7 @@ AQA_TOPICS = {
     }
 }
 
+
 # ============ SCORING ENGINE ============
 STOP_WORDS = {
     'the', 'and', 'are', 'from', 'that', 'with', 'for', 'can', 'its', 'has',
@@ -472,22 +469,16 @@ def extract_keywords(text):
 def calculate_score(user_text, spec_points):
     if not user_text or not user_text.strip():
         return 0.0, []
-
     user_keywords = extract_keywords(user_text)
     if not user_keywords:
         return 0.0, []
-
     matched_points = []
-    total_points = len(spec_points)
-
     for point in spec_points:
         point_keywords = extract_keywords(point)
         if not point_keywords:
             continue
-
         matched_count = 0
         total_weight = 0
-
         for pk in point_keywords:
             total_weight += 1
             best = 0
@@ -501,15 +492,12 @@ def calculate_score(user_text, spec_points):
                     ratio = SequenceMatcher(None, pk, uk).ratio()
                     if ratio > 0.88:
                         best = max(best, ratio * 0.6)
-
             if best >= 0.45:
                 matched_count += best
-
         similarity = matched_count / total_weight if total_weight > 0 else 0
         if similarity >= 0.50:
             matched_points.append(point)
-
-    score = (len(matched_points) / total_points * 100) if total_points > 0 else 0
+    score = (len(matched_points) / len(spec_points) * 100) if spec_points else 0
     return round(min(score, 100), 1), matched_points
 
 # ============ RANKING & RAG ============
@@ -536,12 +524,55 @@ def get_rag_status(score, manual_rag=None):
     else:
         return "Green", "rag-green"
 
+# ============ SPEC TRACKER HELPERS ============
+def get_tracker_key(topic, subtopic, spec_point):
+    """Generate a unique key for a spec point in the tracker."""
+    safe_point = spec_point[:50].replace(" ", "_").replace("'", "")
+    return f"tracker|{topic}|{subtopic}|{safe_point}"
+
+def get_tracker_data(progress, topic, subtopic):
+    """Get tracker data for a specific subtopic."""
+    tracker = progress.get("tracker", {})
+    key_prefix = f"{topic}|{subtopic}"
+    result = {}
+    for k, v in tracker.items():
+        if k.startswith(key_prefix):
+            result[k] = v
+    return result
+
+def get_spec_tracker_stats(progress):
+    """Get overall spec tracker statistics."""
+    tracker = progress.get("tracker", {})
+    total_points = 0
+    covered = 0
+    red = amber = green = 0
+
+    for topic_name, subtopics in AQA_TOPICS.items():
+        for sub_name, points in subtopics.items():
+            for point in points:
+                total_points += 1
+                key = f"{topic_name}|{sub_name}|{point[:50].replace(' ', '_').replace(chr(39), '')}"
+                if key in tracker:
+                    covered += 1
+                    rag = tracker[key].get("rag", "Red")
+                    if rag == "Red": red += 1
+                    elif rag == "Amber": amber += 1
+                    else: green += 1
+
+    return {
+        "total": total_points,
+        "covered": covered,
+        "coverage_pct": round(covered / total_points * 100, 1) if total_points else 0,
+        "red": red,
+        "amber": amber,
+        "green": green
+    }
+
 # ============ DASHBOARD STATS ============
 def get_dashboard_stats(progress):
     total_subtopics = sum(len(subs) for subs in AQA_TOPICS.values())
     attempted = 0
     total_score = 0
-    scores_list = []
     red_count = amber_count = green_count = 0
     topic_stats = {}
 
@@ -554,16 +585,13 @@ def get_dashboard_stats(progress):
                 attempted += 1
                 score = progress[key].get('best_score', 0)
                 total_score += score
-                scores_list.append(score)
                 topic_scores.append(score)
                 topic_attempted += 1
-
                 manual = progress[key].get('manual_rag', None)
                 rag = manual or get_rag_status(score)[0]
                 if rag == "Red": red_count += 1
                 elif rag == "Amber": amber_count += 1
                 else: green_count += 1
-
         if topic_attempted > 0:
             topic_stats[topic_name] = {
                 'avg': round(sum(topic_scores)/len(topic_scores), 1),
@@ -573,10 +601,11 @@ def get_dashboard_stats(progress):
 
     avg_score = round(total_score / attempted, 1) if attempted > 0 else 0
     completion = round(attempted / total_subtopics * 100, 1) if total_subtopics > 0 else 0
-
-    # Estimate hours: each attempt ~5 mins
-    total_attempts = sum(p.get('attempts', 0) for p in progress.values())
+    total_attempts = sum(p.get('attempts', 0) for p in progress.values() if isinstance(p, dict) and 'attempts' in p)
     hours = round(total_attempts * 5 / 60, 1)
+
+    # Spec tracker stats
+    tracker_stats = get_spec_tracker_stats(progress)
 
     return {
         'total_subtopics': total_subtopics,
@@ -587,8 +616,8 @@ def get_dashboard_stats(progress):
         'red': red_count,
         'amber': amber_count,
         'green': green_count,
-        'scores': scores_list,
-        'topic_stats': topic_stats
+        'topic_stats': topic_stats,
+        'tracker': tracker_stats
     }
 
 def get_weak_topics(progress, limit=5):
@@ -618,7 +647,6 @@ def get_weak_topics(progress, limit=5):
                     'rag': 'New',
                     'reason': 'Not attempted'
                 })
-
     weak.sort(key=lambda x: (0 if x['rag'] == 'Red' else 1, x['score']))
     return weak[:limit]
 
@@ -638,32 +666,49 @@ if 'current_score' not in st.session_state:
 if 'blurting_start' not in st.session_state:
     st.session_state.blurting_start = None
 
+if 'app_mode' not in st.session_state:
+    st.session_state.app_mode = "dashboard"  # dashboard, topic, blurt, tracker
+
 # ============ MAIN UI ============
 st.title("🧬 BioBlurt")
-st.markdown("<p style='text-align: center; color: #888; margin-top: -10px; font-size: 14px;'>Active Recall for AQA A-Level Biology</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #888; margin-top: -10px; font-size: 14px;'>Active Recall + Spec Tracker for AQA A-Level Biology</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 # Navigation
 if st.session_state.selected_subtopic is None:
     if st.session_state.selected_topic is None:
-        # ============ DASHBOARD HOME SCREEN ============
+        # ============ DASHBOARD ============
         stats = get_dashboard_stats(st.session_state.progress)
 
-        # Top stats row
+        # Top stats
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            st.markdown(f"<div class='dashboard-card'><div class='dashboard-stat'>{stats['attempted']}/{stats['total_subtopics']}</div><div class='dashboard-label'>Topics Done</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='dashboard-card'><div class='dashboard-stat'>{stats['attempted']}/{stats['total_subtopics']}</div><div class='dashboard-label'>Blurts Done</div></div>", unsafe_allow_html=True)
         with c2:
-            st.markdown(f"<div class='dashboard-card'><div class='dashboard-stat'>{stats['avg_score']}%</div><div class='dashboard-label'>Average Score</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='dashboard-card'><div class='dashboard-stat'>{stats['avg_score']}%</div><div class='dashboard-label'>Avg Blurt Score</div></div>", unsafe_allow_html=True)
         with c3:
             st.markdown(f"<div class='dashboard-card'><div class='dashboard-stat'>{stats['hours']}h</div><div class='dashboard-label'>Time Studied</div></div>", unsafe_allow_html=True)
         with c4:
-            st.markdown(f"<div class='dashboard-card'><div class='dashboard-stat'>{stats['completion']}%</div><div class='dashboard-label'>Completion</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='dashboard-card'><div class='dashboard-stat'>{stats['tracker']['coverage_pct']}%</div><div class='dashboard-label'>Spec Covered</div></div>", unsafe_allow_html=True)
 
-        # RAG breakdown
+        # Spec tracker mini-view
+        if stats['tracker']['total'] > 0:
+            st.markdown("---")
+            st.markdown("### 📋 Spec Tracker Overview")
+            tcol1, tcol2, tcol3, tcol4 = st.columns(4)
+            with tcol1:
+                st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#fff;'>{stats['tracker']['covered']}/{stats['tracker']['total']}</span><br/><span style='color:#888;font-size:12px;'>Points Covered</span></div>", unsafe_allow_html=True)
+            with tcol2:
+                st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#ff5555;'>{stats['tracker']['red']}</span><br/><span style='color:#888;font-size:12px;'>Red</span></div>", unsafe_allow_html=True)
+            with tcol3:
+                st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#ffaa33;'>{stats['tracker']['amber']}</span><br/><span style='color:#888;font-size:12px;'>Amber</span></div>", unsafe_allow_html=True)
+            with tcol4:
+                st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#55ff88;'>{stats['tracker']['green']}</span><br/><span style='color:#888;font-size:12px;'>Green</span></div>", unsafe_allow_html=True)
+
+        # Blurt RAG breakdown
         if stats['attempted'] > 0:
             st.markdown("---")
-            st.markdown("### 📊 Performance Breakdown")
+            st.markdown("### 📊 Blurt Performance")
             rag_col1, rag_col2, rag_col3 = st.columns(3)
             with rag_col1:
                 st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#ff5555;'>{stats['red']}</span><br/><span style='color:#888;font-size:12px;'>Red</span></div>", unsafe_allow_html=True)
@@ -672,7 +717,7 @@ if st.session_state.selected_subtopic is None:
             with rag_col3:
                 st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#55ff88;'>{stats['green']}</span><br/><span style='color:#888;font-size:12px;'>Green</span></div>", unsafe_allow_html=True)
 
-        # Topic progress bars
+        # Topic progress
         if stats['topic_stats']:
             st.markdown("---")
             st.markdown("### 📚 Topic Progress")
@@ -722,7 +767,7 @@ if st.session_state.selected_subtopic is None:
                 else:
                     st.markdown("<span class='new-text'>New</span>", unsafe_allow_html=True)
     else:
-        # SUBTOPIC SCREEN
+        # ============ SUBTOPIC SCREEN ============
         st.subheader(f"📚 {st.session_state.selected_topic}")
 
         if st.button("← Back to Dashboard", key="back_to_topics"):
@@ -730,7 +775,7 @@ if st.session_state.selected_subtopic is None:
             st.rerun()
 
         st.markdown("---")
-        st.markdown("**Select a sub-topic to blurt:**")
+        st.markdown("**Select a sub-topic:**")
 
         subtopics = AQA_TOPICS[st.session_state.selected_topic]
         for subtopic_name in subtopics:
@@ -738,7 +783,6 @@ if st.session_state.selected_subtopic is None:
             with col1:
                 if st.button(f"📝 {subtopic_name}", key=f"sub_{subtopic_name}", use_container_width=True):
                     st.session_state.selected_subtopic = subtopic_name
-                    st.session_state.blurting_start = time.time()
                     st.rerun()
             with col2:
                 key = f"{st.session_state.selected_topic}|{subtopic_name}"
@@ -757,7 +801,7 @@ if st.session_state.selected_subtopic is None:
                     st.markdown(f"<div style='text-align: center; padding-top: 2px;'><span class='rank-badge {rank_class}'>{rank}</span></div>", unsafe_allow_html=True)
 
 else:
-    # BLURT SCREEN
+    # ============ SUBTOPIC ACTIONS SCREEN ============
     topic = st.session_state.selected_topic
     subtopic = st.session_state.selected_subtopic
     spec_points = AQA_TOPICS[topic][subtopic]
@@ -779,143 +823,230 @@ else:
 
     st.markdown("---")
 
-    # Current status
-    progress_key = f"{topic}|{subtopic}"
-    if progress_key in st.session_state.progress:
-        data = st.session_state.progress[progress_key]
-        current_score = data.get('best_score', 0)
-        manual_rag = data.get('manual_rag', None)
-        status, css_class = get_rag_status(current_score, manual_rag)
-        rank, rank_class = get_rank(current_score)
-        attempts = data.get('attempts', 0)
-        history = data.get('scores_history', [])
+    # Two modes: Blurt or Tracker
+    mode_col1, mode_col2 = st.columns(2)
+    with mode_col1:
+        if st.button("🧠 Blurt Mode", use_container_width=True, type="primary" if st.session_state.app_mode != "tracker" else "secondary"):
+            st.session_state.app_mode = "blurt"
+            st.rerun()
+    with mode_col2:
+        if st.button("📋 Spec Tracker", use_container_width=True, type="primary" if st.session_state.app_mode == "tracker" else "secondary"):
+            st.session_state.app_mode = "tracker"
+            st.rerun()
 
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.markdown(f"**Status:** <span class='{css_class}'>{status}</span>", unsafe_allow_html=True)
+    # ============ BLURT MODE ============
+    if st.session_state.app_mode != "tracker":
+        # Current status
+        progress_key = f"{topic}|{subtopic}"
+        if progress_key in st.session_state.progress:
+            data = st.session_state.progress[progress_key]
+            current_score = data.get('best_score', 0)
+            manual_rag = data.get('manual_rag', None)
+            status, css_class = get_rag_status(current_score, manual_rag)
+            rank, rank_class = get_rank(current_score)
+            attempts = data.get('attempts', 0)
+            history = data.get('scores_history', [])
+
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.markdown(f"**Status:** <span class='{css_class}'>{status}</span>", unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"**Best:** {current_score}%")
+            with col3:
+                st.markdown(f"<span class='rank-badge {rank_class}'>{rank}</span>", unsafe_allow_html=True)
+            with col4:
+                st.markdown(f"**Attempts:** {attempts}")
+
+            if len(history) > 1:
+                st.markdown(f"<p style='color:#888;font-size:12px;'>Score history: {', '.join(str(h) for h in history[-5:])}%</p>", unsafe_allow_html=True)
+            st.markdown("---")
+
+        # Blurt input
+        st.markdown("### 🧠 Blurt everything you know:")
+        st.markdown("<p style='color: #888; font-size: 14px;'>Type everything you remember. Key concepts matter more than perfect sentences.</p>", unsafe_allow_html=True)
+
+        user_blurt = st.text_area("", height=300, placeholder="Start typing your blurt here...", key="blurt_input")
+
+        col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
-            st.markdown(f"**Best:** {current_score}%")
-        with col3:
-            st.markdown(f"<span class='rank-badge {rank_class}'>{rank}</span>", unsafe_allow_html=True)
-        with col4:
-            st.markdown(f"**Attempts:** {attempts}")
+            if st.button("✅ Submit Blurt", type="primary", use_container_width=True):
+                if user_blurt.strip():
+                    score, matched = calculate_score(user_blurt, spec_points)
+                    st.session_state.current_score = score
 
-        if len(history) > 1:
-            st.markdown(f"<p style='color:#888;font-size:12px;'>Score history: {', '.join(str(h) for h in history[-5:])}%</p>", unsafe_allow_html=True)
-        st.markdown("---")
+                    time_spent = 0
+                    if st.session_state.blurting_start:
+                        time_spent = round(time.time() - st.session_state.blurting_start)
 
-    # Blurt input
-    st.markdown("### 🧠 Blurt everything you know:")
-    st.markdown("<p style='color: #888; font-size: 14px;'>Type everything you remember. Key concepts matter more than perfect sentences.</p>", unsafe_allow_html=True)
+                    progress_key = f"{topic}|{subtopic}"
+                    existing = st.session_state.progress.get(progress_key, {})
+                    best_so_far = existing.get('best_score', 0)
+                    new_best = max(score, best_so_far)
 
-    user_blurt = st.text_area("", height=300, placeholder="Start typing your blurt here...", key="blurt_input")
+                    st.session_state.progress[progress_key] = {
+                        "best_score": new_best,
+                        "last_score": score,
+                        "attempts": existing.get("attempts", 0) + 1,
+                        "scores_history": existing.get("scores_history", []) + [score],
+                        "manual_rag": existing.get("manual_rag", None),
+                        "last_attempt": datetime.now().isoformat(),
+                        "total_time": existing.get("total_time", 0) + time_spent
+                    }
+                    safe_save_progress(st.session_state.progress)
+                    st.session_state.blurting_start = None
+                    st.rerun()
+                else:
+                    st.error("Please write something before submitting!")
 
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("✅ Submit Blurt", type="primary", use_container_width=True):
-            if user_blurt.strip():
-                score, matched = calculate_score(user_blurt, spec_points)
-                st.session_state.current_score = score
-
-                # Track time spent
-                time_spent = 0
-                if st.session_state.blurting_start:
-                    time_spent = round(time.time() - st.session_state.blurting_start)
-
-                progress_key = f"{topic}|{subtopic}"
-                existing = st.session_state.progress.get(progress_key, {})
-                best_so_far = existing.get('best_score', 0)
-                new_best = max(score, best_so_far)
-
-                st.session_state.progress[progress_key] = {
-                    "best_score": new_best,
-                    "last_score": score,
-                    "attempts": existing.get("attempts", 0) + 1,
-                    "scores_history": existing.get("scores_history", []) + [score],
-                    "manual_rag": existing.get("manual_rag", None),
-                    "last_attempt": datetime.now().isoformat(),
-                    "total_time": existing.get("total_time", 0) + time_spent
-                }
-                safe_save_progress(st.session_state.progress)
-                st.session_state.blurting_start = None
-                st.rerun()
+        # Results
+        if st.session_state.current_score > 0 or (f"{topic}|{subtopic}" in st.session_state.progress):
+            progress_key = f"{topic}|{subtopic}"
+            if st.session_state.current_score > 0:
+                display_score = st.session_state.current_score
             else:
-                st.error("Please write something before submitting!")
+                display_score = st.session_state.progress[progress_key].get('best_score', 0)
 
-    # Results
-    if st.session_state.current_score > 0 or progress_key in st.session_state.progress:
-        if st.session_state.current_score > 0:
-            display_score = st.session_state.current_score
-        else:
-            display_score = st.session_state.progress[progress_key].get('best_score', 0)
+            st.markdown("---")
+            st.markdown("### 📊 Results")
 
+            manual_rag = st.session_state.progress.get(progress_key, {}).get('manual_rag', None)
+            status, css_class = get_rag_status(display_score, manual_rag)
+            rank, rank_class = get_rank(display_score)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"<div class='score-display {css_class}'>{display_score}%</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='text-align: center;'><span class='rank-badge {rank_class}'>{rank}</span></div>", unsafe_allow_html=True)
+            with col2:
+                st.markdown("**Status:**")
+                st.markdown(f"<span class='{css_class}' style='font-size: 24px;'>{status}</span>", unsafe_allow_html=True)
+
+                if display_score < 40:
+                    st.markdown("🔴 **Red** — Needs significant revision")
+                elif display_score < 65:
+                    st.markdown("🟡 **Amber** — Partial understanding, review missed points")
+                elif display_score < 85:
+                    st.markdown("🟢 **Green** — Strong recall")
+                else:
+                    st.markdown("🏆 **Master** — Excellent! Maintain with spaced review")
+
+            # Spec breakdown
+            st.markdown("---")
+            st.markdown("### 📝 Specification Points Check")
+
+            _, matched = calculate_score(user_blurt if user_blurt.strip() else "", spec_points)
+
+            for point in spec_points:
+                if point in matched:
+                    st.success(f"✅ {point}")
+                else:
+                    st.error(f"❌ {point}")
+
+            # Manual RAG override
+            st.markdown("---")
+            st.markdown("### 🎯 Manual RAG Assessment")
+            st.markdown("<p style='color: #888; font-size: 13px;'>Override the auto-score if you feel differently.</p>", unsafe_allow_html=True)
+
+            rag_col1, rag_col2, rag_col3, rag_col4 = st.columns(4)
+            with rag_col1:
+                if st.button("🔴 Red", key="manual_red", use_container_width=True):
+                    st.session_state.progress.setdefault(progress_key, {})
+                    st.session_state.progress[progress_key]['manual_rag'] = "Red"
+                    safe_save_progress(st.session_state.progress)
+                    st.rerun()
+            with rag_col2:
+                if st.button("🟡 Amber", key="manual_amber", use_container_width=True):
+                    st.session_state.progress.setdefault(progress_key, {})
+                    st.session_state.progress[progress_key]['manual_rag'] = "Amber"
+                    safe_save_progress(st.session_state.progress)
+                    st.rerun()
+            with rag_col3:
+                if st.button("🟢 Green", key="manual_green", use_container_width=True):
+                    st.session_state.progress.setdefault(progress_key, {})
+                    st.session_state.progress[progress_key]['manual_rag'] = "Green"
+                    safe_save_progress(st.session_state.progress)
+                    st.rerun()
+            with rag_col4:
+                if st.button("↩️ Auto", key="manual_auto", use_container_width=True):
+                    st.session_state.progress.setdefault(progress_key, {})
+                    st.session_state.progress[progress_key]['manual_rag'] = None
+                    safe_save_progress(st.session_state.progress)
+                    st.rerun()
+
+    # ============ SPEC TRACKER MODE ============
+    else:
         st.markdown("---")
-        st.markdown("### 📊 Results")
+        st.markdown("### 📋 Specification Point Tracker")
+        st.markdown("<p style='color: #888; font-size: 14px;'>Go through each spec point. Tick if covered, set your confidence level, and add notes.</p>", unsafe_allow_html=True)
 
-        manual_rag = st.session_state.progress.get(progress_key, {}).get('manual_rag', None)
-        status, css_class = get_rag_status(display_score, manual_rag)
-        rank, rank_class = get_rank(display_score)
+        # Initialize tracker in progress if not exists
+        if "tracker" not in st.session_state.progress:
+            st.session_state.progress["tracker"] = {}
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"<div class='score-display {css_class}'>{display_score}%</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='text-align: center;'><span class='rank-badge {rank_class}'>{rank}</span></div>", unsafe_allow_html=True)
-        with col2:
-            st.markdown("**Status:**")
-            st.markdown(f"<span class='{css_class}' style='font-size: 24px;'>{status}</span>", unsafe_allow_html=True)
+        tracker = st.session_state.progress["tracker"]
 
-            if display_score < 40:
-                st.markdown("🔴 **Red** — Needs significant revision")
-            elif display_score < 65:
-                st.markdown("🟡 **Amber** — Partial understanding, review missed points")
-            elif display_score < 85:
-                st.markdown("🟢 **Green** — Strong recall")
-            else:
-                st.markdown("🏆 **Master** — Excellent! Maintain with spaced review")
+        # Count stats for this subtopic
+        subtopic_covered = 0
+        subtopic_red = subtopic_amber = subtopic_green = 0
 
-        # Spec breakdown
+        for i, point in enumerate(spec_points):
+            safe_key = f"{topic}|{subtopic}|{point[:50].replace(' ', '_').replace(chr(39), '')}"
+            point_data = tracker.get(safe_key, {"covered": False, "rag": "Red", "notes": ""})
+
+            # Update from form
+            form_key = f"tracker_form_{safe_key}"
+
+            with st.container():
+                css_class = "tracker-covered" if point_data.get("covered") else "tracker-uncovered"
+                st.markdown(f"<div class='tracker-item {css_class}'>", unsafe_allow_html=True)
+
+                c1, c2, c3 = st.columns([0.5, 3, 1.5])
+                with c1:
+                    covered = st.checkbox("", value=point_data.get("covered", False), key=f"cov_{form_key}")
+                with c2:
+                    st.markdown(f"<p style='color:#ccc;font-size:14px;margin:0;'>{point}</p>", unsafe_allow_html=True)
+                with c3:
+                    rag = st.selectbox("", ["Red", "Amber", "Green"], index=["Red", "Amber", "Green"].index(point_data.get("rag", "Red")), key=f"rag_{form_key}", label_visibility="collapsed")
+
+                notes = st.text_input("Notes (optional)", value=point_data.get("notes", ""), key=f"notes_{form_key}", placeholder="Add notes...")
+
+                st.markdown("</div>", unsafe_allow_html=True)
+
+                # Save if changed
+                if covered != point_data.get("covered") or rag != point_data.get("rag") or notes != point_data.get("notes"):
+                    tracker[safe_key] = {
+                        "covered": covered,
+                        "rag": rag,
+                        "notes": notes,
+                        "updated": datetime.now().isoformat()
+                    }
+                    st.session_state.progress["tracker"] = tracker
+                    safe_save_progress(st.session_state.progress)
+
+                if covered:
+                    subtopic_covered += 1
+                    if rag == "Red": subtopic_red += 1
+                    elif rag == "Amber": subtopic_amber += 1
+                    else: subtopic_green += 1
+
+        # Subtopic tracker summary
         st.markdown("---")
-        st.markdown("### 📝 Specification Points Check")
+        st.markdown("### 📊 Tracker Summary")
+        total_pts = len(spec_points)
+        coverage = round(subtopic_covered / total_pts * 100, 1) if total_pts else 0
 
-        _, matched = calculate_score(user_blurt if user_blurt.strip() else "", spec_points)
-
-        for point in spec_points:
-            if point in matched:
-                st.success(f"✅ {point}")
-            else:
-                st.error(f"❌ {point}")
-
-        # Manual RAG override
-        st.markdown("---")
-        st.markdown("### 🎯 Manual RAG Assessment")
-        st.markdown("<p style='color: #888; font-size: 13px;'>Override the auto-score if you feel differently.</p>", unsafe_allow_html=True)
-
-        rag_col1, rag_col2, rag_col3, rag_col4 = st.columns(4)
-        with rag_col1:
-            if st.button("🔴 Red", key="manual_red", use_container_width=True):
-                st.session_state.progress.setdefault(progress_key, {})
-                st.session_state.progress[progress_key]['manual_rag'] = "Red"
-                safe_save_progress(st.session_state.progress)
-                st.rerun()
-        with rag_col2:
-            if st.button("🟡 Amber", key="manual_amber", use_container_width=True):
-                st.session_state.progress.setdefault(progress_key, {})
-                st.session_state.progress[progress_key]['manual_rag'] = "Amber"
-                safe_save_progress(st.session_state.progress)
-                st.rerun()
-        with rag_col3:
-            if st.button("🟢 Green", key="manual_green", use_container_width=True):
-                st.session_state.progress.setdefault(progress_key, {})
-                st.session_state.progress[progress_key]['manual_rag'] = "Green"
-                safe_save_progress(st.session_state.progress)
-                st.rerun()
-        with rag_col4:
-            if st.button("↩️ Auto", key="manual_auto", use_container_width=True):
-                st.session_state.progress.setdefault(progress_key, {})
-                st.session_state.progress[progress_key]['manual_rag'] = None
-                safe_save_progress(st.session_state.progress)
-                st.rerun()
+        c1, c2, c3, c4, c5 = st.columns(5)
+        with c1:
+            st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#fff;'>{subtopic_covered}/{total_pts}</span><br/><span style='color:#888;font-size:11px;'>Covered</span></div>", unsafe_allow_html=True)
+        with c2:
+            st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#fff;'>{coverage}%</span><br/><span style='color:#888;font-size:11px;'>Coverage</span></div>", unsafe_allow_html=True)
+        with c3:
+            st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#ff5555;'>{subtopic_red}</span><br/><span style='color:#888;font-size:11px;'>Red</span></div>", unsafe_allow_html=True)
+        with c4:
+            st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#ffaa33;'>{subtopic_amber}</span><br/><span style='color:#888;font-size:11px;'>Amber</span></div>", unsafe_allow_html=True)
+        with c5:
+            st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#55ff88;'>{subtopic_green}</span><br/><span style='color:#888;font-size:11px;'>Green</span></div>", unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: #555; font-size: 12px;'>BioBlurt v4.0 | AQA Biology A-Level (7402)</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #555; font-size: 12px;'>BioBlurt v4.1 | AQA Biology A-Level (7402)</p>", unsafe_allow_html=True)
