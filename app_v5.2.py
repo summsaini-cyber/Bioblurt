@@ -649,6 +649,11 @@ def get_weak_topics(progress, limit=5):
     weak.sort(key=lambda x: (0 if x['rag'] == 'Red' else 1, x['score']))
     return weak[:limit]
 
+
+def go_to_review(topic, subtopic):
+    st.session_state.selected_topic = topic
+    st.session_state.selected_subtopic = subtopic
+
 # ============ SESSION STATE ============
 if 'progress' not in st.session_state:
     st.session_state.progress = safe_load_progress()
@@ -671,6 +676,188 @@ if 'app_mode' not in st.session_state:
     if 'tracker_selected_topic' not in st.session_state:
         st.session_state.tracker_selected_topic = None
 
+# ============ FULL SPEC TRACKER VIEW ============
+def render_full_spec_tracker():
+    st.subheader("📋 Full AQA Biology Specification Tracker")
+    st.markdown("<p style='color: #888; font-size: 14px;'>Track your progress through the entire specification. Tick off points as you cover them in lessons, revision, or blurts.</p>", unsafe_allow_html=True)
+
+    if st.button("← Back to Dashboard", key="back_from_full_tracker"):
+        st.session_state.app_mode = "dashboard"
+        st.session_state.tracker_selected_topic = None
+        st.rerun()
+
+    # Overall stats
+    tracker_stats = get_spec_tracker_stats(st.session_state.progress)
+
+    st.markdown("---")
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#fff;'>{tracker_stats['covered']}/{tracker_stats['total']}</span><br/><span style='color:#888;font-size:12px;'>Points Covered</span></div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#fff;'>{tracker_stats['coverage_pct']}%</span><br/><span style='color:#888;font-size:12px;'>Coverage</span></div>", unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#ff5555;'>{tracker_stats['red']}</span><br/><span style='color:#888;font-size:12px;'>Red</span></div>", unsafe_allow_html=True)
+    with c4:
+        st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#ffaa33;'>{tracker_stats['amber']}</span><br/><span style='color:#888;font-size:12px;'>Amber</span></div>", unsafe_allow_html=True)
+    with c5:
+        st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#55ff88;'>{tracker_stats['green']}</span><br/><span style='color:#888;font-size:12px;'>Green</span></div>", unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Search
+    search_term = st.text_input("🔍 Search spec points...", placeholder="e.g. 'photosynthesis', 'glycolysis', 'action potential'", key="full_tracker_search")
+
+    # Initialize tracker
+    if "tracker" not in st.session_state.progress:
+        st.session_state.progress["tracker"] = {}
+    tracker = st.session_state.progress["tracker"]
+
+    # View mode
+    view_mode = st.radio("View mode", ["By Topic (Recommended)", "Full List (All Topics)"], horizontal=True, key="tracker_view_mode")
+
+    if view_mode == "By Topic (Recommended)":
+        # Show topic cards if no topic selected
+        if not st.session_state.tracker_selected_topic:
+            st.markdown("### 📚 Select a Topic")
+
+            for topic_name, subtopics in AQA_TOPICS.items():
+                topic_total = 0
+                topic_covered = 0
+                topic_red = topic_amber = topic_green = 0
+
+                for sub_name, points in subtopics.items():
+                    for point in points:
+                        topic_total += 1
+                        key = f"{topic_name}|{sub_name}|{point[:50].replace(' ', '_').replace(chr(39), '')}"
+                        if key in tracker:
+                            topic_covered += 1
+                            rag = tracker[key].get("rag", "Red")
+                            if rag == "Red": topic_red += 1
+                            elif rag == "Amber": topic_amber += 1
+                            else: topic_green += 1
+
+                coverage = round(topic_covered / topic_total * 100, 1) if topic_total else 0
+                bar_color = '#4CAF50' if coverage >= 80 else '#ffaa33' if coverage >= 40 else '#ff5555'
+
+                st.markdown(f"""
+                <div class='topic-card-main' style='margin-bottom: 16px;'>
+                    <div style='display:flex; justify-content:space-between; align-items:center;'>
+                        <div>
+                            <h4 style='margin:0; color:#fff;'>{topic_name}</h4>
+                            <p style='margin:4px 0 0 0; color:#888; font-size:13px;'>{topic_covered}/{topic_total} points • {coverage}% covered</p>
+                        </div>
+                        <div style='text-align:right;'>
+                            <span style='color:#ff5555; font-weight:700;'>{topic_red}</span> /
+                            <span style='color:#ffaa33; font-weight:700;'>{topic_amber}</span> /
+                            <span style='color:#55ff88; font-weight:700;'>{topic_green}</span>
+                        </div>
+                    </div>
+                    <div class='progress-bar-bg' style='margin-top:10px;'>
+                        <div class='progress-bar-fill' style='width:{coverage}%; background:{bar_color};'></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                if st.button(f"View {topic_name}", key=f"view_topic_{topic_name.replace(' ', '_').replace('.', '')}", use_container_width=True):
+                    st.session_state.tracker_selected_topic = topic_name
+                    st.rerun()
+        else:
+            # Show selected topic details
+            selected_topic = st.session_state.tracker_selected_topic
+            st.markdown(f"### 📖 {selected_topic}")
+
+            if st.button("← Back to All Topics", key="back_to_topic_list"):
+                st.session_state.tracker_selected_topic = None
+                st.rerun()
+
+            subtopics = AQA_TOPICS[selected_topic]
+
+            for sub_name, points in subtopics.items():
+                with st.expander(f"📝 {sub_name} ({len(points)} points)", expanded=True):
+                    sub_covered = 0
+                    sub_red = sub_amber = sub_green = 0
+                    visible_points = 0
+
+                    for point in points:
+                        safe_key = f"{selected_topic}|{sub_name}|{point[:50].replace(' ', '_').replace(chr(39), '')}"
+                        point_data = tracker.get(safe_key, {"covered": False, "rag": "Red", "notes": ""})
+
+                        if search_term and search_term.lower() not in point.lower():
+                            continue
+                        visible_points += 1
+
+                        css_class = "tracker-covered" if point_data.get("covered") else "tracker-uncovered"
+                        st.markdown(f"<div class='tracker-item {css_class}'>", unsafe_allow_html=True)
+
+                        c1, c2, c3 = st.columns([0.5, 3, 1.5])
+                        with c1:
+                            covered = st.checkbox("", value=point_data.get("covered", False), key=f"ft_cov_{safe_key}")
+                        with c2:
+                            st.markdown(f"<p style='color:#ccc;font-size:14px;margin:0;'>{point}</p>", unsafe_allow_html=True)
+                        with c3:
+                            rag = st.selectbox("", ["Red", "Amber", "Green"], index=["Red", "Amber", "Green"].index(point_data.get("rag", "Red")), key=f"ft_rag_{safe_key}", label_visibility="collapsed")
+
+                        notes = st.text_input("Notes", value=point_data.get("notes", ""), key=f"ft_notes_{safe_key}", placeholder="Add notes...", label_visibility="collapsed")
+                        st.markdown("</div>", unsafe_allow_html=True)
+
+                        if covered != point_data.get("covered") or rag != point_data.get("rag") or notes != point_data.get("notes"):
+                            tracker[safe_key] = {
+                                "covered": covered,
+                                "rag": rag,
+                                "notes": notes,
+                                "updated": datetime.now().isoformat()
+                            }
+                            st.session_state.progress["tracker"] = tracker
+                            safe_save_progress(st.session_state.progress)
+
+                        if covered:
+                            sub_covered += 1
+                            if rag == "Red": sub_red += 1
+                            elif rag == "Amber": sub_amber += 1
+                            else: sub_green += 1
+
+                    # Subtopic summary
+                    if visible_points > 0 and len(points) > 0:
+                        sub_coverage = round(sub_covered / len(points) * 100, 1)
+                        st.markdown(f"<p style='color:#888; font-size:12px; text-align:right;'>Visible: {visible_points}/{len(points)} • Covered: {sub_covered}/{len(points)} ({sub_coverage}%) • <span style='color:#ff5555;'>{sub_red} Red</span> • <span style='color:#ffaa33;'>{sub_amber} Amber</span> • <span style='color:#55ff88;'>{sub_green} Green</span></p>", unsafe_allow_html=True)
+                    elif search_term:
+                        st.markdown("<p style='color:#888; font-size:12px; text-align:center;'>No points match your search in this subtopic.</p>", unsafe_allow_html=True)
+    else:
+        # Full List mode
+        st.markdown("### 📚 Complete Specification")
+        st.info("ℹ️ This view loads all specification points. Use 'By Topic' for better performance on slower devices.")
+
+        for topic_name, subtopics in AQA_TOPICS.items():
+            with st.expander(f"📚 {topic_name}", expanded=False):
+                for sub_name, points in subtopics.items():
+                    st.markdown(f"**📝 {sub_name}**")
+
+                    for point in points:
+                        safe_key = f"{topic_name}|{sub_name}|{point[:50].replace(' ', '_').replace(chr(39), '')}"
+                        point_data = tracker.get(safe_key, {"covered": False, "rag": "Red", "notes": ""})
+
+                        if search_term and search_term.lower() not in point.lower():
+                            continue
+
+                        c1, c2, c3 = st.columns([0.5, 3, 1.5])
+                        with c1:
+                            covered = st.checkbox("", value=point_data.get("covered", False), key=f"list_cov_{safe_key}")
+                        with c2:
+                            st.markdown(f"<p style='color:#ccc;font-size:13px;margin:0;'>{point}</p>", unsafe_allow_html=True)
+                        with c3:
+                            rag = st.selectbox("", ["Red", "Amber", "Green"], index=["Red", "Amber", "Green"].index(point_data.get("rag", "Red")), key=f"list_rag_{safe_key}", label_visibility="collapsed")
+
+                        if covered != point_data.get("covered") or rag != point_data.get("rag"):
+                            tracker[safe_key] = {
+                                "covered": covered,
+                                "rag": rag,
+                                "notes": point_data.get("notes", ""),
+                                "updated": datetime.now().isoformat()
+                            }
+                            st.session_state.progress["tracker"] = tracker
+                            safe_save_progress(st.session_state.progress)
+
+                    st.markdown("<br/>", unsafe_allow_html=True)
 # ============ MAIN UI ============
 st.title("🧬 BioBlurt")
 st.markdown("<p style='text-align: center; color: #888; margin-top: -10px; font-size: 14px;'>Active Recall + Spec Tracker for AQA A-Level Biology</p>", unsafe_allow_html=True)
@@ -694,20 +881,6 @@ elif st.session_state.selected_subtopic is None:
             st.markdown(f"<div class='dashboard-card'><div class='dashboard-stat'>{stats['hours']}h</div><div class='dashboard-label'>Time Studied</div></div>", unsafe_allow_html=True)
         with c4:
             st.markdown(f"<div class='dashboard-card'><div class='dashboard-stat'>{stats['tracker']['coverage_pct']}%</div><div class='dashboard-label'>Spec Covered</div></div>", unsafe_allow_html=True)
-
-        # Spec tracker mini-view
-        if stats['tracker']['total'] > 0:
-            st.markdown("---")
-            st.markdown("### 📋 Spec Tracker Overview")
-            tcol1, tcol2, tcol3, tcol4 = st.columns(4)
-            with tcol1:
-                st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#fff;'>{stats['tracker']['covered']}/{stats['tracker']['total']}</span><br/><span style='color:#888;font-size:12px;'>Points Covered</span></div>", unsafe_allow_html=True)
-            with tcol2:
-                st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#ff5555;'>{stats['tracker']['red']}</span><br/><span style='color:#888;font-size:12px;'>Red</span></div>", unsafe_allow_html=True)
-            with tcol3:
-                st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#ffaa33;'>{stats['tracker']['amber']}</span><br/><span style='color:#888;font-size:12px;'>Amber</span></div>", unsafe_allow_html=True)
-            with tcol4:
-                st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#55ff88;'>{stats['tracker']['green']}</span><br/><span style='color:#888;font-size:12px;'>Green</span></div>", unsafe_allow_html=True)
 
         # Blurt RAG breakdown
         if stats['attempted'] > 0:
@@ -767,16 +940,14 @@ elif st.session_state.selected_subtopic is None:
         if weak:
             st.markdown("---")
             st.markdown("### 📉 Recommended Review")
-            for wt in weak:
-                c1, c2 = st.columns([5, 1])
-                with c1:
+            for idx, wt in enumerate(weak):
+                btn_col1, btn_col2 = st.columns([5, 1])
+                with btn_col1:
                     st.markdown(f"<div class='weak-topic-card'><b style='color:#fff;font-size:14px;'>{wt['subtopic']}</b><br/><span style='color:#888;font-size:12px;'>{wt['topic']} • {wt['reason']}</span></div>", unsafe_allow_html=True)
-                with c2:
-                    if st.button("Review", key=f"review_{wt['key']}"):
-                        st.session_state.selected_topic = wt['topic']
-                        st.session_state.selected_subtopic = wt['subtopic']
-                        st.rerun()
-
+                with btn_col2:
+                    st.button("Review →", key=f"review_btn_{idx}_{wt['key'].replace(' ', '_').replace('.', '').replace('|', '_')}",
+                             on_click=go_to_review, args=(wt['topic'], wt['subtopic']),
+                             use_container_width=True)
         st.markdown("---")
         st.markdown("### 🎯 Select a Topic")
 
@@ -833,7 +1004,7 @@ elif st.session_state.selected_subtopic is None:
                 if key in st.session_state.progress:
                     score = st.session_state.progress[key].get('best_score', 0)
                     rank, rank_class = get_rank(score)
-                    st.markdown(f"<div style='text-align: center; padding-top: 2px;'><span class='rank-badge {rank_class}'>{rank}</span></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='display:flex;align-items:center;justify-content:center;height:38px;'><span class='rank-badge {rank_class}'>{rank}</span></div>", unsafe_allow_html=True)
 
 else:
     # ============ SUBTOPIC ACTIONS SCREEN ============
@@ -1082,188 +1253,6 @@ else:
         with c5:
             st.markdown(f"<div style='text-align:center;'><span style='font-size:24px;font-weight:800;color:#55ff88;'>{subtopic_green}</span><br/><span style='color:#888;font-size:11px;'>Green</span></div>", unsafe_allow_html=True)
 
-# ============ FULL SPEC TRACKER VIEW ============
-def render_full_spec_tracker():
-    st.subheader("📋 Full AQA Biology Specification Tracker")
-    st.markdown("<p style='color: #888; font-size: 14px;'>Track your progress through the entire specification. Tick off points as you cover them in lessons, revision, or blurts.</p>", unsafe_allow_html=True)
-
-    if st.button("← Back to Dashboard", key="back_from_full_tracker"):
-        st.session_state.app_mode = "dashboard"
-        st.session_state.tracker_selected_topic = None
-        st.rerun()
-
-    # Overall stats
-    tracker_stats = get_spec_tracker_stats(st.session_state.progress)
-
-    st.markdown("---")
-    c1, c2, c3, c4, c5 = st.columns(5)
-    with c1:
-        st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#fff;'>{tracker_stats['covered']}/{tracker_stats['total']}</span><br/><span style='color:#888;font-size:12px;'>Points Covered</span></div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#fff;'>{tracker_stats['coverage_pct']}%</span><br/><span style='color:#888;font-size:12px;'>Coverage</span></div>", unsafe_allow_html=True)
-    with c3:
-        st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#ff5555;'>{tracker_stats['red']}</span><br/><span style='color:#888;font-size:12px;'>Red</span></div>", unsafe_allow_html=True)
-    with c4:
-        st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#ffaa33;'>{tracker_stats['amber']}</span><br/><span style='color:#888;font-size:12px;'>Amber</span></div>", unsafe_allow_html=True)
-    with c5:
-        st.markdown(f"<div style='text-align:center;'><span style='font-size:28px;font-weight:800;color:#55ff88;'>{tracker_stats['green']}</span><br/><span style='color:#888;font-size:12px;'>Green</span></div>", unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # Search
-    search_term = st.text_input("🔍 Search spec points...", placeholder="e.g. 'photosynthesis', 'glycolysis', 'action potential'", key="full_tracker_search")
-
-    # Initialize tracker
-    if "tracker" not in st.session_state.progress:
-        st.session_state.progress["tracker"] = {}
-    tracker = st.session_state.progress["tracker"]
-
-    # View mode
-    view_mode = st.radio("View mode", ["By Topic (Recommended)", "Full List (All Topics)"], horizontal=True, key="tracker_view_mode")
-
-    if view_mode == "By Topic (Recommended)":
-        # Show topic cards if no topic selected
-        if not st.session_state.tracker_selected_topic:
-            st.markdown("### 📚 Select a Topic")
-
-            for topic_name, subtopics in AQA_TOPICS.items():
-                topic_total = 0
-                topic_covered = 0
-                topic_red = topic_amber = topic_green = 0
-
-                for sub_name, points in subtopics.items():
-                    for point in points:
-                        topic_total += 1
-                        key = f"{topic_name}|{sub_name}|{point[:50].replace(' ', '_').replace(chr(39), '')}"
-                        if key in tracker:
-                            topic_covered += 1
-                            rag = tracker[key].get("rag", "Red")
-                            if rag == "Red": topic_red += 1
-                            elif rag == "Amber": topic_amber += 1
-                            else: topic_green += 1
-
-                coverage = round(topic_covered / topic_total * 100, 1) if topic_total else 0
-                bar_color = '#4CAF50' if coverage >= 80 else '#ffaa33' if coverage >= 40 else '#ff5555'
-
-                st.markdown(f"""
-                <div class='topic-card-main' style='margin-bottom: 16px;'>
-                    <div style='display:flex; justify-content:space-between; align-items:center;'>
-                        <div>
-                            <h4 style='margin:0; color:#fff;'>{topic_name}</h4>
-                            <p style='margin:4px 0 0 0; color:#888; font-size:13px;'>{topic_covered}/{topic_total} points • {coverage}% covered</p>
-                        </div>
-                        <div style='text-align:right;'>
-                            <span style='color:#ff5555; font-weight:700;'>{topic_red}</span> /
-                            <span style='color:#ffaa33; font-weight:700;'>{topic_amber}</span> /
-                            <span style='color:#55ff88; font-weight:700;'>{topic_green}</span>
-                        </div>
-                    </div>
-                    <div class='progress-bar-bg' style='margin-top:10px;'>
-                        <div class='progress-bar-fill' style='width:{coverage}%; background:{bar_color};'></div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                if st.button(f"View {topic_name}", key=f"view_topic_{topic_name.replace(' ', '_').replace('.', '')}", use_container_width=True):
-                    st.session_state.tracker_selected_topic = topic_name
-                    st.rerun()
-        else:
-            # Show selected topic details
-            selected_topic = st.session_state.tracker_selected_topic
-            st.markdown(f"### 📖 {selected_topic}")
-
-            if st.button("← Back to All Topics", key="back_to_topic_list"):
-                st.session_state.tracker_selected_topic = None
-                st.rerun()
-
-            subtopics = AQA_TOPICS[selected_topic]
-
-            for sub_name, points in subtopics.items():
-                with st.expander(f"📝 {sub_name} ({len(points)} points)", expanded=True):
-                    sub_covered = 0
-                    sub_red = sub_amber = sub_green = 0
-                    visible_points = 0
-
-                    for point in points:
-                        safe_key = f"{selected_topic}|{sub_name}|{point[:50].replace(' ', '_').replace(chr(39), '')}"
-                        point_data = tracker.get(safe_key, {"covered": False, "rag": "Red", "notes": ""})
-
-                        if search_term and search_term.lower() not in point.lower():
-                            continue
-                        visible_points += 1
-
-                        css_class = "tracker-covered" if point_data.get("covered") else "tracker-uncovered"
-                        st.markdown(f"<div class='tracker-item {css_class}'>", unsafe_allow_html=True)
-
-                        c1, c2, c3 = st.columns([0.5, 3, 1.5])
-                        with c1:
-                            covered = st.checkbox("", value=point_data.get("covered", False), key=f"ft_cov_{safe_key}")
-                        with c2:
-                            st.markdown(f"<p style='color:#ccc;font-size:14px;margin:0;'>{point}</p>", unsafe_allow_html=True)
-                        with c3:
-                            rag = st.selectbox("", ["Red", "Amber", "Green"], index=["Red", "Amber", "Green"].index(point_data.get("rag", "Red")), key=f"ft_rag_{safe_key}", label_visibility="collapsed")
-
-                        notes = st.text_input("Notes", value=point_data.get("notes", ""), key=f"ft_notes_{safe_key}", placeholder="Add notes...", label_visibility="collapsed")
-                        st.markdown("</div>", unsafe_allow_html=True)
-
-                        if covered != point_data.get("covered") or rag != point_data.get("rag") or notes != point_data.get("notes"):
-                            tracker[safe_key] = {
-                                "covered": covered,
-                                "rag": rag,
-                                "notes": notes,
-                                "updated": datetime.now().isoformat()
-                            }
-                            st.session_state.progress["tracker"] = tracker
-                            safe_save_progress(st.session_state.progress)
-
-                        if covered:
-                            sub_covered += 1
-                            if rag == "Red": sub_red += 1
-                            elif rag == "Amber": sub_amber += 1
-                            else: sub_green += 1
-
-                    # Subtopic summary
-                    if visible_points > 0 and len(points) > 0:
-                        sub_coverage = round(sub_covered / len(points) * 100, 1)
-                        st.markdown(f"<p style='color:#888; font-size:12px; text-align:right;'>Visible: {visible_points}/{len(points)} • Covered: {sub_covered}/{len(points)} ({sub_coverage}%) • <span style='color:#ff5555;'>{sub_red} Red</span> • <span style='color:#ffaa33;'>{sub_amber} Amber</span> • <span style='color:#55ff88;'>{sub_green} Green</span></p>", unsafe_allow_html=True)
-                    elif search_term:
-                        st.markdown("<p style='color:#888; font-size:12px; text-align:center;'>No points match your search in this subtopic.</p>", unsafe_allow_html=True)
-    else:
-        # Full List mode
-        st.markdown("### 📚 Complete Specification")
-        st.info("ℹ️ This view loads all specification points. Use 'By Topic' for better performance on slower devices.")
-
-        for topic_name, subtopics in AQA_TOPICS.items():
-            with st.expander(f"📚 {topic_name}", expanded=False):
-                for sub_name, points in subtopics.items():
-                    st.markdown(f"**📝 {sub_name}**")
-
-                    for point in points:
-                        safe_key = f"{topic_name}|{sub_name}|{point[:50].replace(' ', '_').replace(chr(39), '')}"
-                        point_data = tracker.get(safe_key, {"covered": False, "rag": "Red", "notes": ""})
-
-                        if search_term and search_term.lower() not in point.lower():
-                            continue
-
-                        c1, c2, c3 = st.columns([0.5, 3, 1.5])
-                        with c1:
-                            covered = st.checkbox("", value=point_data.get("covered", False), key=f"list_cov_{safe_key}")
-                        with c2:
-                            st.markdown(f"<p style='color:#ccc;font-size:13px;margin:0;'>{point}</p>", unsafe_allow_html=True)
-                        with c3:
-                            rag = st.selectbox("", ["Red", "Amber", "Green"], index=["Red", "Amber", "Green"].index(point_data.get("rag", "Red")), key=f"list_rag_{safe_key}", label_visibility="collapsed")
-
-                        if covered != point_data.get("covered") or rag != point_data.get("rag"):
-                            tracker[safe_key] = {
-                                "covered": covered,
-                                "rag": rag,
-                                "notes": point_data.get("notes", ""),
-                                "updated": datetime.now().isoformat()
-                            }
-                            st.session_state.progress["tracker"] = tracker
-                            safe_save_progress(st.session_state.progress)
-
-                    st.markdown("<br/>", unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
