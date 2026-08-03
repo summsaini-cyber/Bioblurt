@@ -125,7 +125,6 @@ def safe_save_progress(progress):
 
 # ============ COMPLETE AQA SPEC ============
 AQA_TOPICS = {
-AQA_TOPICS = {
     "3.1 Biological molecules": {
         "3.1.1 Monomers and polymers": [
             "Monomers are the smaller units from which larger molecules (polymers) are made. Monosaccharides, amino acids and nucleotides are examples of monomers.",
