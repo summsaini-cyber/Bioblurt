@@ -523,6 +523,15 @@ def get_rag_status(score, manual_rag=None):
     else:
         return "Green", "rag-green"
 
+
+def get_effective_rank(score, manual_rag=None):
+    """Return rank considering manual RAG override."""
+    rank, rank_class = get_rank(score)
+    if manual_rag == "Amber" and score < 45:
+        return "Developing", "rank-developing"
+    elif manual_rag == "Green" and score < 65:
+        return "Proficient", "rank-proficient"
+    return rank, rank_class
 # ============ SPEC TRACKER HELPERS ============
 def get_tracker_key(topic, subtopic, spec_point):
     """Generate a unique key for a spec point in the tracker."""
@@ -787,7 +796,7 @@ def render_full_spec_tracker():
                         visible_points += 1
 
                         css_class = "tracker-covered" if point_data.get("covered") else "tracker-uncovered"
-                        st.markdown(f"<div class='tracker-item {css_class}'>", unsafe_allow_html=True)
+
 
                         c1, c2, c3 = st.columns([0.5, 3, 1.5])
                         with c1:
@@ -798,7 +807,7 @@ def render_full_spec_tracker():
                             rag = st.selectbox("", ["Red", "Amber", "Green"], index=["Red", "Amber", "Green"].index(point_data.get("rag", "Red")), key=f"ft_rag_{safe_key}", label_visibility="collapsed")
 
                         notes = st.text_input("Notes", value=point_data.get("notes", ""), key=f"ft_notes_{safe_key}", placeholder="Add notes...", label_visibility="collapsed")
-                        st.markdown("</div>", unsafe_allow_html=True)
+
 
                         if covered != point_data.get("covered") or rag != point_data.get("rag") or notes != point_data.get("notes"):
                             tracker[safe_key] = {
@@ -971,7 +980,7 @@ elif st.session_state.selected_subtopic is None:
                     status, css_class = get_rag_status(avg, any_manual)
                     st.markdown(f"<span class='rag-status {css_class}'>{status}</span>", unsafe_allow_html=True)
                 else:
-                    st.markdown("<span class='new-text'>New</span>", unsafe_allow_html=True)
+                    st.markdown("<div style='display:flex;align-items:center;justify-content:center;height:42px;'><span class='new-text'>New</span></div>", unsafe_allow_html=True)
     else:
         # ============ SUBTOPIC SCREEN ============
         st.subheader(f"📚 {st.session_state.selected_topic}")
@@ -996,15 +1005,15 @@ elif st.session_state.selected_subtopic is None:
                     score = st.session_state.progress[key].get('best_score', 0)
                     manual = st.session_state.progress[key].get('manual_rag', None)
                     status, css_class = get_rag_status(score, manual)
-                    st.markdown(f"<span class='rag-status {css_class}'>{status}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='display:flex;align-items:center;justify-content:center;height:42px;'><span class='rag-status {css_class}'>{status}</span></div>", unsafe_allow_html=True)
                 else:
                     st.markdown("<span class='new-text'>New</span>", unsafe_allow_html=True)
             with col3:
                 key = f"{st.session_state.selected_topic}|{subtopic_name}"
                 if key in st.session_state.progress:
                     score = st.session_state.progress[key].get('best_score', 0)
-                    rank, rank_class = get_rank(score)
-                    st.markdown(f"<div style='display:flex;align-items:center;justify-content:center;height:38px;'><span class='rank-badge {rank_class}'>{rank}</span></div>", unsafe_allow_html=True)
+                    rank, rank_class = get_effective_rank(score, manual)
+                    st.markdown(f"<div style='display:flex;align-items:center;justify-content:center;height:42px;'><span class='rank-badge {rank_class}'>{rank}</span></div>", unsafe_allow_html=True)
 
 else:
     # ============ SUBTOPIC ACTIONS SCREEN ============
@@ -1049,7 +1058,7 @@ else:
             current_score = data.get('best_score', 0)
             manual_rag = data.get('manual_rag', None)
             status, css_class = get_rag_status(current_score, manual_rag)
-            rank, rank_class = get_rank(current_score)
+            rank, rank_class = get_effective_rank(current_score, manual_rag)
             attempts = data.get('attempts', 0)
             history = data.get('scores_history', [])
 
@@ -1117,7 +1126,7 @@ else:
 
             manual_rag = st.session_state.progress.get(progress_key, {}).get('manual_rag', None)
             status, css_class = get_rag_status(display_score, manual_rag)
-            rank, rank_class = get_rank(display_score)
+            rank, rank_class = get_effective_rank(display_score, manual_rag)
 
             col1, col2 = st.columns(2)
             with col1:
@@ -1204,7 +1213,7 @@ else:
 
             with st.container():
                 css_class = "tracker-covered" if point_data.get("covered") else "tracker-uncovered"
-                st.markdown(f"<div class='tracker-item {css_class}'>", unsafe_allow_html=True)
+
 
                 c1, c2, c3 = st.columns([0.5, 3, 1.5])
                 with c1:
@@ -1216,7 +1225,7 @@ else:
 
                 notes = st.text_input("Notes (optional)", value=point_data.get("notes", ""), key=f"notes_{form_key}", placeholder="Add notes...")
 
-                st.markdown("</div>", unsafe_allow_html=True)
+
 
                 # Save if changed
                 if covered != point_data.get("covered") or rag != point_data.get("rag") or notes != point_data.get("notes"):
